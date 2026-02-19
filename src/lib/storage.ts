@@ -1,4 +1,5 @@
 import type { AttendanceEvent, ChildId, ChildProfile, InstructorId, InstructorProfile } from './types'
+import { clearTeamAccessData } from './teamAccess'
 
 const CHILDREN_KEY = 'cck_children_v1'
 const EVENTS_KEY = 'cck_events_v1'
@@ -72,6 +73,7 @@ export function clearAllData() {
   localStorage.removeItem(EVENTS_KEY)
   localStorage.removeItem(UPDATES_KEY)
   localStorage.removeItem(INSTRUCTORS_KEY)
+  clearTeamAccessData()
 }
 
 export type InstructorUpdates = {
