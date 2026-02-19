@@ -1,8 +1,9 @@
-import type { AttendanceEvent, ChildId, ChildProfile } from './types'
+import type { AttendanceEvent, ChildId, ChildProfile, InstructorId, InstructorProfile } from './types'
 
 const CHILDREN_KEY = 'cck_children_v1'
 const EVENTS_KEY = 'cck_events_v1'
 const UPDATES_KEY = 'cck_instructor_updates_v1'
+const INSTRUCTORS_KEY = 'cck_instructors_v1'
 
 function safeJsonParse<T>(value: string | null, fallback: T): T {
   if (!value) return fallback
@@ -70,6 +71,7 @@ export function clearAllData() {
   localStorage.removeItem(CHILDREN_KEY)
   localStorage.removeItem(EVENTS_KEY)
   localStorage.removeItem(UPDATES_KEY)
+  localStorage.removeItem(INSTRUCTORS_KEY)
 }
 
 export type InstructorUpdates = {
@@ -92,4 +94,46 @@ export function setInstructorUpdates(message: string) {
 
 export function clearInstructorUpdates() {
   localStorage.removeItem(UPDATES_KEY)
+}
+
+export function getInstructors(): InstructorProfile[] {
+  return safeJsonParse<InstructorProfile[]>(localStorage.getItem(INSTRUCTORS_KEY), [])
+}
+
+export function saveInstructors(instructors: InstructorProfile[]) {
+  localStorage.setItem(INSTRUCTORS_KEY, JSON.stringify(instructors))
+}
+
+export function upsertInstructor(
+  profile: Omit<InstructorProfile, 'createdAtISO'> & { createdAtISO?: string },
+): InstructorProfile {
+  const list = getInstructors()
+  const existingIndex = list.findIndex((i) => i.id === profile.id)
+
+  const next: InstructorProfile = {
+    ...profile,
+    createdAtISO: profile.createdAtISO ?? new Date().toISOString(),
+  }
+
+  if (existingIndex >= 0) {
+    list[existingIndex] = next
+  } else {
+    list.unshift(next)
+  }
+
+  saveInstructors(list)
+  return next
+}
+
+export function deleteInstructor(instructorId: InstructorId) {
+  const list = getInstructors().filter((i) => i.id !== instructorId)
+  saveInstructors(list)
+}
+
+export function setInstructorActive(instructorId: InstructorId, active: boolean) {
+  const list = getInstructors()
+  const idx = list.findIndex((i) => i.id === instructorId)
+  if (idx < 0) return
+  list[idx] = { ...list[idx], active }
+  saveInstructors(list)
 }

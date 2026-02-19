@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { addEvent, findChildById, findChildrenByName, getInstructorUpdates } from '../lib/storage'
+import { addEvent, findChildById, findChildrenByName, getInstructorUpdates, getInstructors } from '../lib/storage'
 
 function nowId() {
   return `${Date.now()}_${Math.random().toString(16).slice(2)}`
@@ -7,6 +7,7 @@ function nowId() {
 
 export default function SignInPage() {
   const updates = useMemo(() => getInstructorUpdates(), [])
+  const instructors = useMemo(() => getInstructors().filter((i) => i.active), [])
   const [search, setSearch] = useState('')
   const matches = useMemo(() => findChildrenByName(search), [search])
 
@@ -59,7 +60,7 @@ export default function SignInPage() {
             <div>
               <div className="teacherUpdatesTitle">Message from the Instructors</div>
               {updates.updatedAtISO ? (
-                <div className="teacherUpdatesMeta">Updated: {new Date(updates.updatedAtISO).toLocaleString()}</div>
+                <div className="teacherUpdatesMeta">(updated {new Date(updates.updatedAtISO).toLocaleDateString()})</div>
               ) : null}
             </div>
           </div>
@@ -67,15 +68,30 @@ export default function SignInPage() {
         </div>
       ) : null}
 
+      {instructors.length ? (
+        <div className="instructorsSection">
+          <div className="instructorsTitle">🧑🏽‍🏫 Today’s instructors</div>
+          <div className="instructorGrid">
+            {instructors.map((i) => (
+              <div key={i.id} className="instructorMiniCard">
+                <div className="strong">{i.fullName}</div>
+                <div className="muted small">{i.role || 'Instructor'}</div>
+                {i.bio ? <div className="muted" style={{ marginTop: 6, whiteSpace: 'pre-wrap' }}>{i.bio}</div> : null}
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
       <label style={{ display: 'block', marginTop: 12 }}>
-        Child name (search)
+        Child’s name
         <input
           value={search}
           onChange={(e) => {
             setSearch(e.target.value)
             if (!e.target.value.trim()) setChildId('')
           }}
-          placeholder="Start typing a name…"
+          placeholder="Start typing…"
           inputMode="search"
           autoComplete="off"
           autoCorrect="off"
@@ -84,7 +100,7 @@ export default function SignInPage() {
       </label>
 
       <div className="muted small" style={{ marginTop: 6 }}>
-        Tip: If the first visit, use “First-time registration”.
+        First time here? Tap “First-time registration”.
       </div>
 
       {search.trim() ? (
@@ -98,7 +114,7 @@ export default function SignInPage() {
                 onClick={() => setChildId(c.id)}
               >
                 <div className="resultTitle">{c.childFirstName} {c.childLastName}</div>
-                <div className="resultMeta">ID: {c.id}</div>
+                <div className="resultMeta">Tap to choose</div>
               </button>
             ))
           ) : (

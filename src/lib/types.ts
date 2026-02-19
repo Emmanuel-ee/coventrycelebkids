@@ -27,3 +27,15 @@ export type AttendanceEvent = {
   timeISO: string
   notes?: string
 }
+
+export type InstructorId = string
+
+export type InstructorProfile = {
+  id: InstructorId
+  fullName: string
+  role?: string
+  bio?: string
+  photoUrl?: string
+  active: boolean
+  createdAtISO: string
+}

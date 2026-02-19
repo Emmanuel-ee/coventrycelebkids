@@ -6,9 +6,9 @@
   color-scheme: dark;
   color: rgba(255, 255, 255, 0.95);
   background:
-    radial-gradient(1200px 700px at 15% 10%, rgba(250, 204, 21, 0.18), transparent 60%),
-    radial-gradient(900px 520px at 85% 18%, rgba(59, 130, 246, 0.22), transparent 60%),
-    radial-gradient(1000px 600px at 55% 95%, rgba(34, 197, 94, 0.12), transparent 55%),
+    radial-gradient(1100px 650px at 12% 12%, rgba(255, 179, 71, 0.22), transparent 58%),
+    radial-gradient(900px 540px at 88% 18%, rgba(255, 108, 180, 0.16), transparent 60%),
+    radial-gradient(1000px 650px at 60% 95%, rgba(116, 202, 255, 0.16), transparent 58%),
     #0b1020;
 
   text-rendering: optimizeLegibility;

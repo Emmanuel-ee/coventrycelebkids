@@ -1,7 +1,26 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { clearAllData, clearInstructorUpdates, getChildren, getEvents, getInstructorUpdates, setInstructorUpdates } from '../lib/storage'
+import {
+  clearAllData,
+  clearInstructorUpdates,
+  deleteInstructor,
+  getChildren,
+  getEvents,
+  getInstructorUpdates,
+  getInstructors,
+  setInstructorActive,
+  setInstructorUpdates,
+  upsertInstructor,
+} from '../lib/storage'
 import { downloadTextFile, toChildrenCsv, toEventsCsv } from '../lib/csv'
+
+function makeInstructorId(name: string) {
+  return name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
+}
 
 function formatTime(iso: string) {
   try {
@@ -21,6 +40,16 @@ export default function AdminPage() {
 
   const [updatesDraft, setUpdatesDraft] = useState('')
 
+  const instructors = useMemo(() => {
+    void refresh
+    return getInstructors()
+  }, [refresh])
+
+  const [editingInstructorId, setEditingInstructorId] = useState<string | null>(null)
+  const [instructorName, setInstructorName] = useState('')
+  const [instructorRole, setInstructorRole] = useState('')
+  const [instructorBio, setInstructorBio] = useState('')
+
   const children = useMemo(() => {
     void refresh
     return getChildren()
@@ -35,9 +64,9 @@ export default function AdminPage() {
 
   return (
     <section className="card">
-      <h2>Admin</h2>
+      <h2>Instructors</h2>
       <p className="muted">
-        This page is stored only in this device’s browser (localStorage). Use Export to download CSV.
+        Everything here is saved on this device only. Use Export to download your records.
       </p>
 
       <div className="card" style={{ marginTop: 12 }}>
@@ -107,6 +136,151 @@ export default function AdminPage() {
             Clear update
           </button>
         </div>
+      </div>
+
+      <div className="card" style={{ marginTop: 12 }}>
+        <h3 style={{ marginTop: 0 }}>🧑🏽‍🏫 Instructors (shown to parents)</h3>
+        <p className="muted small" style={{ marginTop: 6 }}>
+          Parents will see instructor name, role, and a short bio (no contact details).
+        </p>
+
+        <div className="grid2" style={{ marginTop: 10 }}>
+          <label>
+            Full name
+            <input
+              value={instructorName}
+              onChange={(e) => setInstructorName(e.target.value)}
+              placeholder="e.g., Sister Grace"
+              autoCapitalize="words"
+            />
+          </label>
+          <label>
+            Role (optional)
+            <input
+              value={instructorRole}
+              onChange={(e) => setInstructorRole(e.target.value)}
+              placeholder="e.g., Lead teacher"
+              autoCapitalize="words"
+            />
+          </label>
+        </div>
+
+        <label style={{ display: 'block', marginTop: 10 }}>
+          Short bio (optional)
+          <textarea
+            value={instructorBio}
+            onChange={(e) => setInstructorBio(e.target.value)}
+            placeholder="A short, friendly line for parents…"
+            rows={3}
+            style={{ width: '100%', resize: 'vertical' }}
+          />
+        </label>
+
+        <div className="actions wrap">
+          <button
+            type="button"
+            onClick={() => {
+              const fullName = instructorName.trim()
+              if (!fullName) {
+                alert('Please enter the instructor name.')
+                return
+              }
+
+              const id = editingInstructorId ?? makeInstructorId(fullName)
+              if (!id) {
+                alert('Please enter a valid name.')
+                return
+              }
+
+              upsertInstructor({
+                id,
+                fullName,
+                role: instructorRole.trim() || undefined,
+                bio: instructorBio.trim() || undefined,
+                active: true,
+              })
+
+              setEditingInstructorId(null)
+              setInstructorName('')
+              setInstructorRole('')
+              setInstructorBio('')
+              setRefresh((x) => x + 1)
+            }}
+          >
+            {editingInstructorId ? 'Save changes' : 'Add instructor'}
+          </button>
+          {editingInstructorId ? (
+            <button
+              type="button"
+              className="secondary"
+              onClick={() => {
+                setEditingInstructorId(null)
+                setInstructorName('')
+                setInstructorRole('')
+                setInstructorBio('')
+              }}
+            >
+              Cancel
+            </button>
+          ) : null}
+        </div>
+
+        {instructors.length ? (
+          <div className="instructorList" style={{ marginTop: 12 }}>
+            {instructors.map((i) => (
+              <div key={i.id} className="instructorCard">
+                <div className="instructorTop">
+                  <div>
+                    <div className="strong">{i.fullName}</div>
+                    <div className="muted small">{i.role || 'Instructor'}</div>
+                  </div>
+                  <label className="muted small" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <input
+                      type="checkbox"
+                      checked={i.active}
+                      onChange={(e) => {
+                        setInstructorActive(i.id, e.target.checked)
+                        setRefresh((x) => x + 1)
+                      }}
+                    />
+                    Active
+                  </label>
+                </div>
+
+                {i.bio ? <div className="muted" style={{ marginTop: 8, whiteSpace: 'pre-wrap' }}>{i.bio}</div> : null}
+
+                <div className="actions wrap" style={{ marginTop: 10 }}>
+                  <button
+                    type="button"
+                    className="secondary"
+                    onClick={() => {
+                      setEditingInstructorId(i.id)
+                      setInstructorName(i.fullName)
+                      setInstructorRole(i.role ?? '')
+                      setInstructorBio(i.bio ?? '')
+                    }}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    className="danger"
+                    onClick={() => {
+                      const ok = confirm(`Delete instructor “${i.fullName}”?`)
+                      if (!ok) return
+                      deleteInstructor(i.id)
+                      setRefresh((x) => x + 1)
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="muted" style={{ marginTop: 10 }}>No instructors added yet.</div>
+        )}
       </div>
 
       <div className="card" style={{ marginTop: 12 }}>

@@ -11,22 +11,29 @@ function App() {
     <div className="app">
       <header className="appHeader">
         <div className="brand">
-          <div className="brandTitle">Celebkids</div>
-          <div className="brandSubtitle">A friendly church check-in • Drop-off ✅ / Pick-up 🏁</div>
+          <img
+            className="brandLogo"
+            src={`${import.meta.env.BASE_URL}logos/Asset 199@4x.png`}
+            alt="Celebkids"
+          />
+          <div>
+            <div className="brandTitle">Celebkids</div>
+            <div className="brandSubtitle">Simple, friendly drop-off & pick-up for children’s class</div>
+          </div>
         </div>
 
         <nav className="nav">
           <NavLink to="/" end className={({ isActive }: { isActive: boolean }) => (isActive ? 'navLink active' : 'navLink')}>
-            Sign in
+            Drop-off
           </NavLink>
           <NavLink to="/sign-out" className={({ isActive }: { isActive: boolean }) => (isActive ? 'navLink active' : 'navLink')}>
-            Sign out
+            Pick-up
           </NavLink>
           <NavLink to="/register" className={({ isActive }: { isActive: boolean }) => (isActive ? 'navLink active' : 'navLink')}>
-            First-time registration
+            First time
           </NavLink>
           <NavLink to="/admin" className={({ isActive }: { isActive: boolean }) => (isActive ? 'navLink active' : 'navLink')}>
-            Admin
+            Instructors
           </NavLink>
         </nav>
       </header>
@@ -42,7 +49,7 @@ function App() {
       </main>
 
       <footer className="footer">
-        <span>Tip: use “Admin → Export CSV” to keep weekly records.</span>
+        <span>Tip: use “Instructors → Export” to keep weekly records.</span>
       </footer>
     </div>
   )

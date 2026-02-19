@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { addEvent, findChildById, findChildrenByName, getInstructorUpdates } from '../lib/storage'
+import { addEvent, findChildById, findChildrenByName, getInstructorUpdates, getInstructors } from '../lib/storage'
 
 function nowId() {
   return `${Date.now()}_${Math.random().toString(16).slice(2)}`
@@ -7,6 +7,7 @@ function nowId() {
 
 export default function SignOutPage() {
   const updates = useMemo(() => getInstructorUpdates(), [])
+  const instructors = useMemo(() => getInstructors().filter((i) => i.active), [])
   const [search, setSearch] = useState('')
   const matches = useMemo(() => findChildrenByName(search), [search])
 
@@ -59,7 +60,7 @@ export default function SignOutPage() {
             <div>
               <div className="teacherUpdatesTitle">Message from the Instructors</div>
               {updates.updatedAtISO ? (
-                <div className="teacherUpdatesMeta">Updated: {new Date(updates.updatedAtISO).toLocaleString()}</div>
+                <div className="teacherUpdatesMeta">(updated {new Date(updates.updatedAtISO).toLocaleDateString()})</div>
               ) : null}
             </div>
           </div>
@@ -67,14 +68,29 @@ export default function SignOutPage() {
         </div>
       ) : null}
 
+      {instructors.length ? (
+        <div className="instructorsSection">
+          <div className="instructorsTitle">🧑🏽‍🏫 Today’s instructors</div>
+          <div className="instructorGrid">
+            {instructors.map((i) => (
+              <div key={i.id} className="instructorMiniCard">
+                <div className="strong">{i.fullName}</div>
+                <div className="muted small">{i.role || 'Instructor'}</div>
+                {i.bio ? <div className="muted" style={{ marginTop: 6, whiteSpace: 'pre-wrap' }}>{i.bio}</div> : null}
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
       <div className="grid2">
         <label>
-          Search by child name
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="e.g., Sarah" />
+          Child’s name
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Start typing…" />
         </label>
         <label>
-          Or enter Child ID
-          <input value={childId} onChange={(e) => setChildId(e.target.value)} placeholder="e.g., smith-sarah-2019-06-01" />
+          Child code (optional)
+          <input value={childId} onChange={(e) => setChildId(e.target.value)} placeholder="Only if needed" />
         </label>
       </div>
 
@@ -89,7 +105,7 @@ export default function SignOutPage() {
                 onClick={() => setChildId(c.id)}
               >
                 <div className="resultTitle">{c.childFirstName} {c.childLastName}</div>
-                <div className="resultMeta">ID: {c.id}</div>
+                <div className="resultMeta">Tap to choose</div>
               </button>
             ))
           ) : (

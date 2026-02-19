@@ -5,59 +5,61 @@
 }
 
 .appHeader {
-  padding: 20px;
+  padding: 18px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(10, 15, 30, 0.55);
-  position: sticky;
-  top: 0;
-  backdrop-filter: blur(10px);
-}
-
-@supports not ((backdrop-filter: blur(10px))) {
-  .appHeader {
-    backdrop-filter: none;
-    background: rgba(10, 15, 30, 0.9);
-  }
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.18);
+  position: static;
 }
 
 .brandTitle {
   font-weight: 800;
   letter-spacing: 0.3px;
-  font-size: 18px;
+  font-size: 20px;
 }
 
-.brandTitle::before {
-  content: '✝︎ ';
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brandLogo {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  object-fit: contain;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  padding: 6px;
 }
 
 .brandSubtitle {
   color: rgba(255, 255, 255, 0.7);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .nav {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
 .navLink {
   padding: 10px 12px;
-  border-radius: 999px;
+  border-radius: 14px;
   text-decoration: none;
   color: rgba(255, 255, 255, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: none;
   background: rgba(255, 255, 255, 0.06);
-  font-weight: 650;
+  font-weight: 800;
 }
 
 .navLink.active {
-  background: linear-gradient(135deg, rgba(255, 71, 133, 0.35), rgba(88, 101, 242, 0.28));
-  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.16);
 }
 
 .container {
@@ -68,15 +70,16 @@
 
 .card {
   padding: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.06);
-  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.22);
 }
 
 h2 {
   margin: 0;
   letter-spacing: 0.2px;
+  font-size: 22px;
 }
 
 .muted {
@@ -122,16 +125,16 @@ h2 {
 label {
   display: grid;
   gap: 6px;
-  font-size: 13px;
+  font-size: 14px;
   color: rgba(255, 255, 255, 0.85);
 }
 
 input,
 textarea {
   padding: 12px 12px;
-  border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(0, 0, 0, 0.22);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.14);
   color: white;
   outline: none;
 }
@@ -147,16 +150,58 @@ textarea:focus {
   gap: 10px;
 }
 
+/* Allergy picker (registration) */
+.allergyChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.chipX {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.18);
+  color: inherit;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0;
+}
+
+.chipX:hover {
+  background: rgba(0, 0, 0, 0.26);
+}
+
+.chipX:focus-visible {
+  outline: 3px solid rgba(255, 255, 255, 0.35);
+  outline-offset: 2px;
+}
+
 .actions.wrap {
   flex-wrap: wrap;
   justify-content: flex-start;
 }
 
 button {
-  padding: 12px 14px;
-  border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: linear-gradient(135deg, rgba(255, 71, 133, 0.45), rgba(88, 101, 242, 0.35));
+  padding: 13px 16px;
+  border-radius: 16px;
+  border: none;
+  background: rgba(255, 255, 255, 0.16);
   color: white;
   cursor: pointer;
   font-weight: 750;
@@ -167,7 +212,7 @@ button:active {
 }
 
 button.secondary {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 button.danger {
@@ -234,6 +279,58 @@ button.danger {
   margin-top: 8px;
   color: rgba(255, 255, 255, 0.62);
   font-size: 12px;
+}
+
+.instructorsSection {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.14);
+}
+
+.instructorsTitle {
+  font-weight: 850;
+  letter-spacing: 0.2px;
+  margin-bottom: 8px;
+}
+
+.instructorGrid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 680px) {
+  .instructorGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.instructorMiniCard {
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.instructorList {
+  display: grid;
+  gap: 10px;
+}
+
+.instructorCard {
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.instructorTop {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: flex-start;
 }
 
 .results {
