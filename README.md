@@ -40,41 +40,6 @@ After the first deploy, your site should be available at:
 
 - Register first-time children using **First-time registration**.
 - Use **Sign in** for drop-off and **Sign out** for pick-up.
-- Use **Admin → Export attendance CSV** weekly.
-
-## Notes / Safety
-
-- Anyone with access to the device can open the **Admin** page and export data.
-- If you want a simple admin PIN for the Admin page, tell me and I’ll add it.
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
     },
   },
 ])
