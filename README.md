@@ -37,6 +37,14 @@ After the first deploy, your site should be available at:
 
 `https://<your-github-username>.github.io/coventrycelebkids/`
 
+## QR code (for parents)
+
+Scan to open the sign in/out site:
+
+[![Open the Children’s Class Sign In/Out site](public/qr-coventrycelebkids.svg)](https://emmanuel-ee.github.io/coventrycelebkids/)
+
+Direct link: https://emmanuel-ee.github.io/coventrycelebkids/
+
 ## Usage tips
 
 - Register first-time children using **First-time registration**.
