@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react'
-import { addEvent, findChildById, findChildrenByName } from '../lib/storage'
+import { addEvent, findChildById, findChildrenByName, getInstructorUpdates } from '../lib/storage'
 
 function nowId() {
   return `${Date.now()}_${Math.random().toString(16).slice(2)}`
 }
 
 export default function SignInPage() {
+  const updates = useMemo(() => getInstructorUpdates(), [])
   const [search, setSearch] = useState('')
   const matches = useMemo(() => findChildrenByName(search), [search])
 
@@ -49,18 +50,33 @@ export default function SignInPage() {
 
   return (
     <section className="card">
-      <h2>✅ Drop-off sign in</h2>
-      <p className="muted">Find the child’s name, tap it, then confirm.</p>
+      <h2>✅ Sign in (Drop-off)</h2>
 
-      <div className="grid2">
-        <label>
-          Search by child name
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="e.g., Sarah" />
-        </label>
-        <label>
-          Or enter Child ID
-          <input value={childId} onChange={(e) => setChildId(e.target.value)} placeholder="e.g., smith-sarah-2019-06-01" />
-        </label>
+      {updates?.message ? (
+        <div className="alert" style={{ marginTop: 10 }}>
+          <div className="strong">Message from the teachers</div>
+          <div style={{ whiteSpace: 'pre-wrap', marginTop: 6 }}>{updates.message}</div>
+        </div>
+      ) : null}
+
+      <label style={{ display: 'block', marginTop: 12 }}>
+        Child name (search)
+        <input
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value)
+            if (!e.target.value.trim()) setChildId('')
+          }}
+          placeholder="Start typing a name…"
+          inputMode="search"
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="words"
+        />
+      </label>
+
+      <div className="muted small" style={{ marginTop: 6 }}>
+        Tip: If the first visit, use “First-time registration”.
       </div>
 
       {search.trim() ? (
@@ -83,21 +99,21 @@ export default function SignInPage() {
         </div>
       ) : null}
 
-      <form onSubmit={submit} className="form">
+      <form onSubmit={submit} className="form" style={{ marginTop: 12 }}>
         <div className="grid2">
+          <label>
+            Selected child
+            <input value={selected ? `${selected.childFirstName} ${selected.childLastName}` : ''} readOnly placeholder="Tap a child from results" />
+          </label>
           <label>
             Parent/guardian name (optional)
             <input value={parentName} onChange={(e) => setParentName(e.target.value)} placeholder={selected?.parentFullName ?? 'Full name'} />
-          </label>
-          <label>
-            Selected child
-            <input value={selected ? `${selected.childFirstName} ${selected.childLastName}` : ''} readOnly placeholder="Select from search results" />
           </label>
         </div>
 
         <label>
           Notes (optional)
-          <input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Any notes for teachers" />
+          <input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Anything we should know?" />
         </label>
 
         {error ? <div className="alert error">{error}</div> : null}

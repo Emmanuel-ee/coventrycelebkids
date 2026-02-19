@@ -2,6 +2,7 @@ import type { AttendanceEvent, ChildId, ChildProfile } from './types'
 
 const CHILDREN_KEY = 'cck_children_v1'
 const EVENTS_KEY = 'cck_events_v1'
+const UPDATES_KEY = 'cck_instructor_updates_v1'
 
 function safeJsonParse<T>(value: string | null, fallback: T): T {
   if (!value) return fallback
@@ -68,4 +69,27 @@ export function addEvent(event: AttendanceEvent) {
 export function clearAllData() {
   localStorage.removeItem(CHILDREN_KEY)
   localStorage.removeItem(EVENTS_KEY)
+  localStorage.removeItem(UPDATES_KEY)
+}
+
+export type InstructorUpdates = {
+  message: string
+  updatedAtISO: string
+}
+
+export function getInstructorUpdates(): InstructorUpdates | null {
+  return safeJsonParse<InstructorUpdates | null>(localStorage.getItem(UPDATES_KEY), null)
+}
+
+export function setInstructorUpdates(message: string) {
+  const next: InstructorUpdates = {
+    message,
+    updatedAtISO: new Date().toISOString(),
+  }
+  localStorage.setItem(UPDATES_KEY, JSON.stringify(next))
+  return next
+}
+
+export function clearInstructorUpdates() {
+  localStorage.removeItem(UPDATES_KEY)
 }

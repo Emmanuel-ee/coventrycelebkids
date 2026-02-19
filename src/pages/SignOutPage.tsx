@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react'
-import { addEvent, findChildById, findChildrenByName } from '../lib/storage'
+import { addEvent, findChildById, findChildrenByName, getInstructorUpdates } from '../lib/storage'
 
 function nowId() {
   return `${Date.now()}_${Math.random().toString(16).slice(2)}`
 }
 
 export default function SignOutPage() {
+  const updates = useMemo(() => getInstructorUpdates(), [])
   const [search, setSearch] = useState('')
   const matches = useMemo(() => findChildrenByName(search), [search])
 
@@ -49,8 +50,14 @@ export default function SignOutPage() {
 
   return (
     <section className="card">
-      <h2>🏁 Pick-up sign out</h2>
-      <p className="muted">Find the child’s name, tap it, then confirm.</p>
+      <h2>🏁 Sign out (Pick-up)</h2>
+
+      {updates?.message ? (
+        <div className="alert" style={{ marginTop: 10 }}>
+          <div className="strong">Message from the teachers</div>
+          <div style={{ whiteSpace: 'pre-wrap', marginTop: 6 }}>{updates.message}</div>
+        </div>
+      ) : null}
 
       <div className="grid2">
         <label>

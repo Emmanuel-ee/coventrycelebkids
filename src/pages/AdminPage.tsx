@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { clearAllData, getChildren, getEvents } from '../lib/storage'
+import { clearAllData, clearInstructorUpdates, getChildren, getEvents, getInstructorUpdates, setInstructorUpdates } from '../lib/storage'
 import { downloadTextFile, toChildrenCsv, toEventsCsv } from '../lib/csv'
 
 function formatTime(iso: string) {
@@ -13,6 +13,14 @@ function formatTime(iso: string) {
 
 export default function AdminPage() {
   const [refresh, setRefresh] = useState(0)
+
+  const savedUpdates = useMemo(() => {
+    void refresh
+    return getInstructorUpdates()
+  }, [refresh])
+
+  const [updatesDraft, setUpdatesDraft] = useState('')
+
   const children = useMemo(() => {
     void refresh
     return getChildren()
@@ -31,6 +39,75 @@ export default function AdminPage() {
       <p className="muted">
         This page is stored only in this device’s browser (localStorage). Use Export to download CSV.
       </p>
+
+      <div className="card" style={{ marginTop: 12 }}>
+        <h3 style={{ marginTop: 0 }}>📣 Instructor updates (shown to parents)</h3>
+        <p className="muted small" style={{ marginTop: 6 }}>
+          This message will appear on the Sign in and Sign out pages.
+        </p>
+
+        {savedUpdates?.message ? (
+          <div className="alert" style={{ marginTop: 10 }}>
+            <div className="strong">Current message</div>
+            <div style={{ whiteSpace: 'pre-wrap', marginTop: 6 }}>{savedUpdates.message}</div>
+            <div className="muted small" style={{ marginTop: 6 }}>
+              Updated: {formatTime(savedUpdates.updatedAtISO)}
+            </div>
+          </div>
+        ) : (
+          <div className="muted" style={{ marginTop: 10 }}>No update message set yet.</div>
+        )}
+
+        <label style={{ display: 'block', marginTop: 10 }}>
+          New / edit message
+          <textarea
+            value={updatesDraft}
+            onChange={(e) => setUpdatesDraft(e.target.value)}
+            placeholder="e.g., ‘Parents: please pick up by 12:30 today. Memory verse: John 3:16.’"
+            rows={4}
+            style={{ width: '100%', resize: 'vertical' }}
+          />
+        </label>
+
+        <div className="actions wrap">
+          <button
+            type="button"
+            onClick={() => {
+              const msg = updatesDraft.trim()
+              if (!msg) {
+                alert('Please type a message (or use Clear).')
+                return
+              }
+              setInstructorUpdates(msg)
+              setUpdatesDraft('')
+              setRefresh((x) => x + 1)
+            }}
+          >
+            Save update
+          </button>
+          <button
+            type="button"
+            className="secondary"
+            onClick={() => {
+              setUpdatesDraft(savedUpdates?.message ?? '')
+            }}
+          >
+            Load current into editor
+          </button>
+          <button
+            type="button"
+            className="danger"
+            onClick={() => {
+              const ok = confirm('Clear the update message for parents?')
+              if (!ok) return
+              clearInstructorUpdates()
+              setRefresh((x) => x + 1)
+            }}
+          >
+            Clear update
+          </button>
+        </div>
+      </div>
 
       <div className="card" style={{ marginTop: 12 }}>
         <h3 style={{ marginTop: 0 }}>🪧 QR code for parents</h3>
