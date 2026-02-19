@@ -85,28 +85,6 @@ export default function SignInPage() {
     <section className="card">
       <h2>✅ Check-in (Drop-off)</h2>
 
-      <div className="signedInNow" style={{ marginTop: 10 }}>
-        <div className="signedInNowHeader">
-          <div className="signedInNowTitle">👧🏾🧒🏼 Children currently checked-in</div>
-          <div className="muted small">Live on this device</div>
-        </div>
-
-        {signedInNow.length ? (
-          <div className="signedInNowList">
-            {signedInNow.map((ev) => (
-              <div key={ev.childId} className="signedInNowRow">
-                <div className="signedInNowName">{ev.childName}</div>
-                <div className="signedInNowMeta">
-                  in at {new Date(ev.timeISO).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="muted">No children signed in yet.</div>
-        )}
-      </div>
-
       {updates?.message ? (
         <div className="teacherUpdates">
           <div className="teacherUpdatesHeader">
@@ -201,6 +179,28 @@ export default function SignInPage() {
           <button type="submit">Finish check-in</button>
         </div>
       </form>
+
+      <div className="signedInNow" style={{ marginTop: 14 }}>
+        <div className="signedInNowHeader">
+          <div className="signedInNowTitle">Children currently checked-in</div>
+          <div className="muted small">Today</div>
+        </div>
+
+        {signedInNow.length ? (
+          <div className="signedInNowList">
+            {signedInNow.map((ev) => (
+              <div key={ev.childId} className="signedInNowRow">
+                <div className="signedInNowName">{ev.childName}</div>
+                <div className="signedInNowMeta">
+                  {new Date(ev.timeISO).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="muted">No children checked-in yet.</div>
+        )}
+      </div>
     </section>
   )
 }

@@ -216,8 +216,8 @@
   padding: 14px;
   border-radius: 18px;
   border: 1px solid rgba(15, 23, 42, 0.10);
-  background: rgba(255, 255, 255, 0.90);
-  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.10);
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.07);
 }
 
 @media (max-width: 720px) {
@@ -237,8 +237,8 @@
 }
 
 .signedInNowTitle {
-  font-weight: 900;
-  letter-spacing: 0.2px;
+  font-weight: 800;
+  letter-spacing: 0.1px;
   color: rgba(15, 23, 42, 0.96);
 }
 
@@ -253,8 +253,8 @@
   gap: 10px;
   padding: 10px 12px;
   border-radius: 14px;
-  background: linear-gradient(135deg, rgba(255, 214, 102, 0.18), rgba(255, 126, 179, 0.10));
-  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(15, 23, 42, 0.07);
 }
 
 @media (max-width: 720px) {
@@ -265,7 +265,7 @@
 }
 
 .signedInNowName {
-  font-weight: 900;
+  font-weight: 800;
 }
 
 .signedInNowMeta {
