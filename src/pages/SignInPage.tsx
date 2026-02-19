@@ -53,9 +53,17 @@ export default function SignInPage() {
       <h2>✅ Sign in (Drop-off)</h2>
 
       {updates?.message ? (
-        <div className="alert" style={{ marginTop: 10 }}>
-          <div className="strong">Message from the teachers</div>
-          <div style={{ whiteSpace: 'pre-wrap', marginTop: 6 }}>{updates.message}</div>
+        <div className="teacherUpdates">
+          <div className="teacherUpdatesHeader">
+            <div className="teacherUpdatesIcon">📣</div>
+            <div>
+              <div className="teacherUpdatesTitle">Message from the teachers</div>
+              {updates.updatedAtISO ? (
+                <div className="teacherUpdatesMeta">Updated: {new Date(updates.updatedAtISO).toLocaleString()}</div>
+              ) : null}
+            </div>
+          </div>
+          <div className="teacherUpdatesBody">{updates.message}</div>
         </div>
       ) : null}
 

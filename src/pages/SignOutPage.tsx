@@ -53,9 +53,17 @@ export default function SignOutPage() {
       <h2>🏁 Sign out (Pick-up)</h2>
 
       {updates?.message ? (
-        <div className="alert" style={{ marginTop: 10 }}>
-          <div className="strong">Message from the teachers</div>
-          <div style={{ whiteSpace: 'pre-wrap', marginTop: 6 }}>{updates.message}</div>
+        <div className="teacherUpdates">
+          <div className="teacherUpdatesHeader">
+            <div className="teacherUpdatesIcon">📣</div>
+            <div>
+              <div className="teacherUpdatesTitle">Message from the Instructors</div>
+              {updates.updatedAtISO ? (
+                <div className="teacherUpdatesMeta">Updated: {new Date(updates.updatedAtISO).toLocaleString()}</div>
+              ) : null}
+            </div>
+          </div>
+          <div className="teacherUpdatesBody">{updates.message}</div>
         </div>
       ) : null}
 
