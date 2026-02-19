@@ -41,7 +41,7 @@ After the first deploy, your site should be available at:
 
 Scan to open the sign in/out site:
 
-[![Open the Children’s Class Sign In/Out site](public/qr-coventrycelebkids.svg)](https://emmanuel-ee.github.io/coventrycelebkids/)
+[![Open the Children’s Class Sign In/Out site](public/qr-coventrycelebkids.png)](https://emmanuel-ee.github.io/coventrycelebkids/)
 
 Direct link: https://emmanuel-ee.github.io/coventrycelebkids/
 
@@ -49,7 +49,3 @@ Direct link: https://emmanuel-ee.github.io/coventrycelebkids/
 
 - Register first-time children using **First-time registration**.
 - Use **Sign in** for drop-off and **Sign out** for pick-up.
-    },
-  },
-])
-```

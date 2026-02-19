@@ -1,6 +1,7 @@
 import './App.css'
 import { NavLink, Route, Routes } from 'react-router-dom'
 import AdminPage from './pages/AdminPage'
+import QrSignPage from './pages/QrSignPage'
 import RegisterChildPage from './pages/RegisterChildPage'
 import SignInPage from './pages/SignInPage'
 import SignOutPage from './pages/SignOutPage'
@@ -27,6 +28,9 @@ function App() {
           <NavLink to="/admin" className={({ isActive }: { isActive: boolean }) => (isActive ? 'navLink active' : 'navLink')}>
             Admin
           </NavLink>
+          <NavLink to="/qr" className={({ isActive }: { isActive: boolean }) => (isActive ? 'navLink active' : 'navLink')}>
+            QR sign
+          </NavLink>
         </nav>
       </header>
 
@@ -36,6 +40,7 @@ function App() {
           <Route path="/sign-out" element={<SignOutPage />} />
           <Route path="/register" element={<RegisterChildPage />} />
           <Route path="/admin" element={<AdminPage />} />
+          <Route path="/qr" element={<QrSignPage />} />
         </Routes>
       </main>
 
