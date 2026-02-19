@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import { addEvent, findChildById, findChildrenByName, getInstructorUpdates, getInstructors } from '../lib/storage'
+import { useEffect, useMemo, useState } from 'react'
+import { addEvent, findChildById, findChildrenByName, getEvents, getInstructorUpdates, getInstructors } from '../lib/storage'
 
 function nowId() {
   return `${Date.now()}_${Math.random().toString(16).slice(2)}`
@@ -8,8 +8,38 @@ function nowId() {
 export default function SignInPage() {
   const updates = useMemo(() => getInstructorUpdates(), [])
   const instructors = useMemo(() => getInstructors().filter((i) => i.active), [])
+  const [eventsRefresh, setEventsRefresh] = useState(0)
   const [search, setSearch] = useState('')
   const matches = useMemo(() => findChildrenByName(search), [search])
+
+  // Poll localStorage-backed events so this screen reflects sign-ins promptly.
+  // (Also catches changes if another tab/device updates localStorage.)
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (!e.key) return
+      if (e.key.includes('cck_events_v1')) setEventsRefresh((x) => x + 1)
+    }
+
+    window.addEventListener('storage', onStorage)
+    const t = window.setInterval(() => setEventsRefresh((x) => x + 1), 2000)
+    return () => {
+      window.removeEventListener('storage', onStorage)
+      window.clearInterval(t)
+    }
+  }, [])
+
+  const signedInNow = useMemo(() => {
+    void eventsRefresh
+    const events = getEvents()
+    const lastByChild = new Map<string, (typeof events)[number]>()
+    for (const ev of events) {
+      if (!lastByChild.has(ev.childId)) lastByChild.set(ev.childId, ev)
+    }
+
+    return Array.from(lastByChild.values())
+      .filter((ev) => ev.type === 'SIGN_IN')
+      .sort((a, b) => (a.timeISO < b.timeISO ? 1 : -1))
+  }, [eventsRefresh])
 
   const [childId, setChildId] = useState('')
   const selected = useMemo(() => findChildById(childId.trim()) ?? null, [childId])
@@ -44,6 +74,8 @@ export default function SignInPage() {
       notes: notes.trim() || undefined,
     })
 
+    setEventsRefresh((x) => x + 1)
+
     setMessage(`Signed in: ${child.childFirstName} ${child.childLastName}`)
     setNotes('')
     setParentName('')
@@ -52,6 +84,28 @@ export default function SignInPage() {
   return (
     <section className="card">
       <h2>✅ Check-in (Drop-off)</h2>
+
+      <div className="signedInNow" style={{ marginTop: 10 }}>
+        <div className="signedInNowHeader">
+          <div className="signedInNowTitle">👧🏾🧒🏼 Children currently checked-in</div>
+          <div className="muted small">Live on this device</div>
+        </div>
+
+        {signedInNow.length ? (
+          <div className="signedInNowList">
+            {signedInNow.map((ev) => (
+              <div key={ev.childId} className="signedInNowRow">
+                <div className="signedInNowName">{ev.childName}</div>
+                <div className="signedInNowMeta">
+                  in at {new Date(ev.timeISO).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="muted">No children signed in yet.</div>
+        )}
+      </div>
 
       {updates?.message ? (
         <div className="teacherUpdates">
