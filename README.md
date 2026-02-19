@@ -30,7 +30,8 @@ This repo includes a GitHub Actions workflow that builds and deploys to Pages on
 
 1. In GitHub, go to **Settings → Pages**
 2. Under **Build and deployment**, set **Source** to **GitHub Actions**
-3. Push to `main`
+3. Make sure Pages is **Enabled** for this repo (if it’s disabled, deploy can fail with a 404 “Failed to create deployment”)
+4. Push to `main` (or re-run the workflow)
 
 After the first deploy, your site should be available at:
 
