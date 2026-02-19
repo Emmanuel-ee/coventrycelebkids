@@ -11,8 +11,21 @@
   justify-content: space-between;
   gap: 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(0, 0, 0, 0.18);
+  background: rgba(0, 0, 0, 0.14);
   position: static;
+}
+
+@media (max-width: 720px) {
+  .appHeader {
+    padding: 14px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .brand {
+    justify-content: center;
+  }
 }
 
 .brandTitle {
@@ -37,6 +50,15 @@
   padding: 6px;
 }
 
+.brandLogoFallback {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  font-weight: 900;
+  letter-spacing: 0.4px;
+  background: linear-gradient(135deg, rgba(255, 214, 102, 0.32), rgba(255, 126, 179, 0.26));
+}
+
 .brandSubtitle {
   color: rgba(255, 255, 255, 0.7);
   font-size: 14px;
@@ -48,18 +70,40 @@
   flex-wrap: wrap;
 }
 
+@media (max-width: 720px) {
+  .nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    overflow: visible;
+    padding-bottom: 0;
+  }
+}
+
 .navLink {
   padding: 10px 12px;
   border-radius: 14px;
   text-decoration: none;
   color: rgba(255, 255, 255, 0.85);
   border: none;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.08);
   font-weight: 800;
 }
 
+@media (max-width: 720px) {
+  .navLink {
+    padding: 12px 14px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    white-space: normal;
+  }
+}
+
 .navLink.active {
-  background: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.18);
 }
 
 .container {
@@ -68,12 +112,47 @@
   flex: 1;
 }
 
+@media (max-width: 720px) {
+  .container {
+    width: min(980px, 94vw);
+    margin: 16px auto;
+  }
+}
+
 .card {
   padding: 18px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 22px;
-  background: rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.06));
   box-shadow: 0 10px 26px rgba(0, 0, 0, 0.22);
+}
+
+.card {
+  position: relative;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    radial-gradient(600px 260px at 20% 0%, rgba(255, 214, 102, 0.18), transparent 60%),
+    radial-gradient(520px 240px at 80% 0%, rgba(255, 126, 179, 0.14), transparent 60%);
+  opacity: 0.9;
+}
+
+.card > * {
+  position: relative;
+}
+
+@media (max-width: 720px) {
+  .card {
+    padding: 16px;
+    border-radius: 20px;
+  }
 }
 
 h2 {
@@ -131,6 +210,24 @@ label {
 
 input,
 textarea {
+  padding: 12px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.14);
+  color: white;
+  outline: none;
+}
+
+@media (max-width: 720px) {
+  input,
+  textarea,
+  select {
+    min-height: 48px;
+    font-size: 16px; /* prevents iOS zoom */
+  }
+}
+
+select {
   padding: 12px 12px;
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.14);
@@ -201,10 +298,24 @@ button {
   padding: 13px 16px;
   border-radius: 16px;
   border: none;
-  background: rgba(255, 255, 255, 0.16);
+  background: linear-gradient(135deg, rgba(255, 214, 102, 0.22), rgba(255, 126, 179, 0.18));
   color: white;
   cursor: pointer;
   font-weight: 750;
+}
+
+@media (max-width: 720px) {
+  button {
+    min-height: 48px;
+  }
+}
+
+button:hover {
+  filter: brightness(1.05);
+}
+
+button.secondary {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 button:active {
@@ -413,4 +524,10 @@ button.danger {
   text-align: center;
   color: rgba(255, 255, 255, 0.6);
   border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+@media (max-width: 720px) {
+  .footer {
+    padding: 16px 14px;
+  }
 }

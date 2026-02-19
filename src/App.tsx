@@ -13,12 +13,26 @@ function App() {
         <div className="brand">
           <img
             className="brandLogo"
-            src={`${import.meta.env.BASE_URL}logos/Asset 199@4x.png`}
+            src={`${import.meta.env.BASE_URL}logos/Asset%20199@4x.png`}
+            srcSet={`${import.meta.env.BASE_URL}logos/Asset%20203@4x.png 2x`}
             alt="Celebkids"
+            loading="eager"
+            onError={(e) => {
+              // Fallback visible placeholder if the logo can't be loaded (e.g., path/base issues)
+              const img = e.currentTarget
+              img.style.display = 'none'
+              const parent = img.parentElement
+              if (parent && !parent.querySelector('.brandLogoFallback')) {
+                const div = document.createElement('div')
+                div.className = 'brandLogo brandLogoFallback'
+                div.textContent = 'CK'
+                parent.insertBefore(div, parent.firstChild)
+              }
+            }}
           />
           <div>
             <div className="brandTitle">Celebkids</div>
-            <div className="brandSubtitle">Simple, friendly drop-off & pick-up for children’s class</div>
+            <div className="brandSubtitle">In Christ for Christ with Joy</div>
           </div>
         </div>
 
@@ -30,10 +44,10 @@ function App() {
             Pick-up
           </NavLink>
           <NavLink to="/register" className={({ isActive }: { isActive: boolean }) => (isActive ? 'navLink active' : 'navLink')}>
-            First time
+            New here?
           </NavLink>
           <NavLink to="/admin" className={({ isActive }: { isActive: boolean }) => (isActive ? 'navLink active' : 'navLink')}>
-            Instructors
+            Team
           </NavLink>
         </nav>
       </header>
@@ -49,7 +63,9 @@ function App() {
       </main>
 
       <footer className="footer">
-        <span>Tip: use “Instructors → Export” to keep weekly records.</span>
+        <span>
+          “Let the little children come to me, and do not hinder them, for the kingdom of heaven belongs to such as these.” — Matthew 19:14
+        </span>
       </footer>
     </div>
   )

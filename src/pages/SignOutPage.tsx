@@ -51,7 +51,11 @@ export default function SignOutPage() {
 
   return (
     <section className="card">
-      <h2>🏁 Sign out (Pick-up)</h2>
+      <h2>🏁 Check-out (Pick-up)</h2>
+
+      <div className="muted" style={{ marginTop: 8 }}>
+        Thanks for coming! If someone else is collecting today, please add a note so we can keep pick-up smooth and safe.
+      </div>
 
       {updates?.message ? (
         <div className="teacherUpdates">
@@ -128,14 +132,14 @@ export default function SignOutPage() {
 
         <label>
           Notes (optional)
-          <input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Any notes (early pick-up etc.)" />
+          <input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Any notes? (early pick-up, someone else collecting)" />
         </label>
 
         {error ? <div className="alert error">{error}</div> : null}
         {message ? <div className="alert success">{message}</div> : null}
 
         <div className="actions">
-          <button type="submit">Confirm sign out</button>
+          <button type="submit">Finish check-out</button>
         </div>
       </form>
     </section>

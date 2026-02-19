@@ -51,7 +51,11 @@ export default function SignInPage() {
 
   return (
     <section className="card">
-      <h2>✅ Sign in (Drop-off)</h2>
+      <h2>✅ Check-in (Drop-off)</h2>
+
+      <div className="muted" style={{ marginTop: 8 }}>
+        We’ll take great care of your child. If there are any allergies, medical needs, or worries today, add a quick note below.
+      </div>
 
       {updates?.message ? (
         <div className="teacherUpdates">
@@ -100,7 +104,7 @@ export default function SignInPage() {
       </label>
 
       <div className="muted small" style={{ marginTop: 6 }}>
-        First time here? Tap “First-time registration”.
+        First time here? Tap “New here?” above.
       </div>
 
       {search.trim() ? (
@@ -137,14 +141,14 @@ export default function SignInPage() {
 
         <label>
           Notes (optional)
-          <input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Anything we should know?" />
+          <input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Anything we should know today?" />
         </label>
 
         {error ? <div className="alert error">{error}</div> : null}
         {message ? <div className="alert success">{message}</div> : null}
 
         <div className="actions">
-          <button type="submit">Confirm sign in</button>
+          <button type="submit">Finish check-in</button>
         </div>
       </form>
     </section>
