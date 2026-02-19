@@ -91,7 +91,7 @@ function TeamGate({ teamUnlocked, onRefresh }: TeamGateProps) {
   return (
     <section className="card">
       <h2>Team access</h2>
-      <p className="muted">Enter the Team PIN to open the Team section on this device.</p>
+      <p className="muted">Enter the Instructors Password to open the Team section on this device.</p>
 
       <form
         className="form"
