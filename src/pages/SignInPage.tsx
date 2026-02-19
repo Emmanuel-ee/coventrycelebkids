@@ -53,10 +53,6 @@ export default function SignInPage() {
     <section className="card">
       <h2>✅ Check-in (Drop-off)</h2>
 
-      <div className="muted" style={{ marginTop: 8 }}>
-        We’ll take great care of your child. If there are any allergies, medical needs, or worries today, add a quick note below.
-      </div>
-
       {updates?.message ? (
         <div className="teacherUpdates">
           <div className="teacherUpdatesHeader">
