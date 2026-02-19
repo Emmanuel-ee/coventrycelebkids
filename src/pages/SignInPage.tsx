@@ -57,7 +57,7 @@ export default function SignInPage() {
           <div className="teacherUpdatesHeader">
             <div className="teacherUpdatesIcon">📣</div>
             <div>
-              <div className="teacherUpdatesTitle">Message from the teachers</div>
+              <div className="teacherUpdatesTitle">Message from the Instructors</div>
               {updates.updatedAtISO ? (
                 <div className="teacherUpdatesMeta">Updated: {new Date(updates.updatedAtISO).toLocaleString()}</div>
               ) : null}
