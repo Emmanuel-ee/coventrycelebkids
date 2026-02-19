@@ -66,9 +66,9 @@ export default function RegisterChildPage() {
 
   return (
     <section className="card">
-      <h2>First-time child registration</h2>
+      <h2>📝 First-time registration</h2>
       <p className="muted">
-        Register the child once. After that, use <b>Sign in</b> at drop-off and <b>Sign out</b> at pick-up.
+        Quick setup for first-time visitors. Next time, just use <b>Sign in</b> (drop-off) and <b>Sign out</b> (pick-up).
       </p>
 
       <form onSubmit={onSubmit} className="form">

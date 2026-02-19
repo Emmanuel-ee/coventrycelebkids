@@ -10,17 +10,28 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(0, 0, 0, 0.25);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(10, 15, 30, 0.55);
   position: sticky;
   top: 0;
   backdrop-filter: blur(10px);
+}
+
+@supports not ((backdrop-filter: blur(10px))) {
+  .appHeader {
+    backdrop-filter: none;
+    background: rgba(10, 15, 30, 0.9);
+  }
 }
 
 .brandTitle {
   font-weight: 800;
   letter-spacing: 0.3px;
   font-size: 18px;
+}
+
+.brandTitle::before {
+  content: '✝︎ ';
 }
 
 .brandSubtitle {
@@ -35,17 +46,18 @@
 }
 
 .navLink {
-  padding: 8px 10px;
+  padding: 10px 12px;
   border-radius: 999px;
   text-decoration: none;
   color: rgba(255, 255, 255, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  font-weight: 650;
 }
 
 .navLink.active {
-  background: rgba(100, 108, 255, 0.25);
-  border-color: rgba(100, 108, 255, 0.4);
+  background: linear-gradient(135deg, rgba(255, 71, 133, 0.35), rgba(88, 101, 242, 0.28));
+  border-color: rgba(255, 255, 255, 0.25);
 }
 
 .container {
@@ -56,9 +68,15 @@
 
 .card {
   padding: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
+}
+
+h2 {
+  margin: 0;
+  letter-spacing: 0.2px;
 }
 
 .muted {
@@ -110,10 +128,10 @@ label {
 
 input,
 textarea {
-  padding: 10px 12px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(0, 0, 0, 0.25);
+  padding: 12px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(0, 0, 0, 0.22);
   color: white;
   outline: none;
 }
@@ -135,12 +153,17 @@ textarea:focus {
 }
 
 button {
-  padding: 10px 12px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(100, 108, 255, 0.25);
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: linear-gradient(135deg, rgba(255, 71, 133, 0.45), rgba(88, 101, 242, 0.35));
   color: white;
   cursor: pointer;
+  font-weight: 750;
+}
+
+button:active {
+  transform: translateY(1px);
 }
 
 button.secondary {
@@ -180,8 +203,8 @@ button.danger {
   display: grid;
   gap: 4px;
   padding: 12px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.04);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .result.selected {

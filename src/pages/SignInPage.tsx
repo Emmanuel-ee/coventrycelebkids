@@ -49,8 +49,8 @@ export default function SignInPage() {
 
   return (
     <section className="card">
-      <h2>Sign in (drop-off)</h2>
-      <p className="muted">Search the child, select, then confirm sign-in.</p>
+      <h2>✅ Drop-off sign in</h2>
+      <p className="muted">Find the child’s name, tap it, then confirm.</p>
 
       <div className="grid2">
         <label>
@@ -104,7 +104,7 @@ export default function SignInPage() {
         {message ? <div className="alert success">{message}</div> : null}
 
         <div className="actions">
-          <button type="submit">Confirm sign-in</button>
+          <button type="submit">Confirm sign in</button>
         </div>
       </form>
     </section>

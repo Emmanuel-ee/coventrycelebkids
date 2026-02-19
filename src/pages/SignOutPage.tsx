@@ -49,8 +49,8 @@ export default function SignOutPage() {
 
   return (
     <section className="card">
-      <h2>Sign out (pick-up)</h2>
-      <p className="muted">Search the child, select, then confirm sign-out.</p>
+      <h2>🏁 Pick-up sign out</h2>
+      <p className="muted">Find the child’s name, tap it, then confirm.</p>
 
       <div className="grid2">
         <label>
@@ -104,7 +104,7 @@ export default function SignOutPage() {
         {message ? <div className="alert success">{message}</div> : null}
 
         <div className="actions">
-          <button type="submit">Confirm sign-out</button>
+          <button type="submit">Confirm sign out</button>
         </div>
       </form>
     </section>

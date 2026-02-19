@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { clearAllData, getChildren, getEvents } from '../lib/storage'
 import { downloadTextFile, toChildrenCsv, toEventsCsv } from '../lib/csv'
 
@@ -22,12 +23,42 @@ export default function AdminPage() {
     return getEvents()
   }, [refresh])
 
+  const url = 'https://emmanuel-ee.github.io/coventrycelebkids/'
+
   return (
     <section className="card">
       <h2>Admin</h2>
       <p className="muted">
         This page is stored only in this device’s browser (localStorage). Use Export to download CSV.
       </p>
+
+      <div className="card" style={{ marginTop: 12 }}>
+        <h3 style={{ marginTop: 0 }}>🪧 QR code for parents</h3>
+        <p className="muted small" style={{ marginTop: 6 }}>
+          Parents can scan this to open the sign in/out page.
+        </p>
+
+        <div style={{ display: 'grid', placeItems: 'center', padding: 10 }}>
+          <a href={url} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>
+            <img
+              src={`${import.meta.env.BASE_URL}qr-coventrycelebkids.png`}
+              alt="QR code to open the sign in/out site"
+              style={{ width: 260, maxWidth: '70vw', background: 'white', padding: 12, borderRadius: 12 }}
+            />
+          </a>
+          <div className="muted small" style={{ marginTop: 8, textAlign: 'center' }}>{url}</div>
+        </div>
+
+        <div className="actions wrap">
+          <Link
+            to="/qr"
+            className="navLink"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}
+          >
+            Open print view
+          </Link>
+        </div>
+      </div>
 
       <div className="actions wrap">
         <button

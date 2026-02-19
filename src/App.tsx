@@ -11,8 +11,8 @@ function App() {
     <div className="app">
       <header className="appHeader">
         <div className="brand">
-          <div className="brandTitle">Children’s Class</div>
-          <div className="brandSubtitle">Drop-off sign-in / pick-up sign-out</div>
+          <div className="brandTitle">Celebkids</div>
+          <div className="brandSubtitle">A friendly church check-in • Drop-off ✅ / Pick-up 🏁</div>
         </div>
 
         <nav className="nav">
@@ -27,9 +27,6 @@ function App() {
           </NavLink>
           <NavLink to="/admin" className={({ isActive }: { isActive: boolean }) => (isActive ? 'navLink active' : 'navLink')}>
             Admin
-          </NavLink>
-          <NavLink to="/qr" className={({ isActive }: { isActive: boolean }) => (isActive ? 'navLink active' : 'navLink')}>
-            QR sign
           </NavLink>
         </nav>
       </header>
