@@ -4,6 +4,33 @@
   flex-direction: column;
 }
 
+/* Abstract blurred photo-shapes (uses local photos, but keeps them unrecognisable) */
+.app::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.5;
+  background:
+    radial-gradient(1000px 700px at 15% 18%, rgba(255, 214, 102, 0.30), transparent 62%),
+    radial-gradient(980px 680px at 85% 22%, rgba(255, 126, 179, 0.22), transparent 64%),
+    radial-gradient(1000px 720px at 55% 92%, rgba(117, 230, 203, 0.22), transparent 62%),
+    url('/Instructors/DSC02792.jpg'),
+    url('/Instructors/DSC02882.jpg'),
+    url('/Instructors/DSC09288.jpg');
+  background-size: auto, auto, auto, 820px 820px, 860px 860px, 900px 900px;
+  background-position: center, center, center, -120px 80px, calc(100% + 140px) 20px, 50% calc(100% + 220px);
+  background-repeat: no-repeat;
+  filter: blur(7px) saturate(1.24) contrast(1.08);
+  transform: translateZ(0);
+}
+
+.app > * {
+  position: relative;
+  z-index: 1;
+}
+
 .appHeader {
   padding: 18px;
   display: flex;
@@ -266,12 +293,84 @@
 
 .signedInNowName {
   font-weight: 800;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .signedInNowMeta {
   color: rgba(23, 29, 44, 0.72);
   font-size: 12px;
   white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+/* Extra-small screens (e.g., iPhone 5 width ~320px) */
+@media (max-width: 360px) {
+  .appHeader {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .brandTitle {
+    font-size: 18px;
+  }
+
+  .brandSubtitle {
+    font-size: 13px;
+  }
+
+  .brandLogo {
+    width: 48px;
+    height: 48px;
+    padding: 7px;
+  }
+
+  .nav {
+    gap: 8px;
+  }
+
+  .navLink {
+    padding: 11px 12px;
+    border-radius: 14px;
+  }
+
+  .card {
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .signedInNow {
+    padding: 11px;
+    border-radius: 16px;
+  }
+
+  .signedInNowRow {
+    padding: 9px 10px;
+    border-radius: 12px;
+  }
+}
+
+@media (max-width: 720px) {
+  .app::before {
+    opacity: 0.22;
+    filter: blur(19px) saturate(1.14);
+    background-size: auto, auto, auto, 720px 720px, 740px 740px, 760px 760px;
+  }
+}
+
+@media (max-width: 360px) {
+  .app::before {
+    /* Extra-simple on iPhone 5 size */
+    opacity: 0.06;
+    background:
+      radial-gradient(900px 650px at 18% 16%, rgba(255, 214, 102, 0.24), transparent 62%),
+      radial-gradient(880px 640px at 84% 18%, rgba(255, 126, 179, 0.18), transparent 64%),
+      radial-gradient(900px 650px at 55% 92%, rgba(117, 230, 203, 0.18), transparent 62%);
+    filter: blur(22px) saturate(1.05);
+  }
 }
 
 .container {
@@ -632,6 +731,40 @@ button.danger {
   background: rgba(255, 255, 255, 0.92);
 }
 
+.instructorMiniHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 10px 18px rgba(15, 23, 42, 0.12);
+  flex: 0 0 auto;
+}
+
+.avatarFallback {
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  letter-spacing: 0.4px;
+  color: rgba(15, 23, 42, 0.92);
+  background: linear-gradient(135deg, rgba(255, 214, 102, 0.40), rgba(255, 126, 179, 0.22));
+}
+
+@media (max-width: 720px) {
+  .avatar {
+    width: 40px;
+    height: 40px;
+    box-shadow: 0 8px 14px rgba(15, 23, 42, 0.10);
+  }
+}
+
 .instructorList {
   display: grid;
   gap: 10px;
@@ -666,6 +799,37 @@ button.danger {
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.92);
   border: 1px solid rgba(20, 32, 50, 0.10);
+}
+
+.resultRow {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.childAvatar {
+  width: 40px;
+  height: 40px;
+  box-shadow: 0 8px 14px rgba(15, 23, 42, 0.10);
+}
+
+.signedInNowLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+@media (max-width: 360px) {
+  .childAvatar {
+    width: 36px;
+    height: 36px;
+  }
+
+  .resultRow {
+    gap: 8px;
+  }
 }
 
 .result.selected {

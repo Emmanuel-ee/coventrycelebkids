@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { addEvent, findChildById, findChildrenByName, getEvents, getInstructorUpdates, getInstructors } from '../lib/storage'
+import { initials, publicAssetUrl } from '../lib/publicPhotos'
 
 function nowId() {
   return `${Date.now()}_${Math.random().toString(16).slice(2)}`
@@ -106,8 +107,17 @@ export default function SignInPage() {
           <div className="instructorGrid">
             {instructors.map((i) => (
               <div key={i.id} className="instructorMiniCard">
-                <div className="strong">{i.fullName}</div>
-                <div className="muted small">{i.role || 'Instructor'}</div>
+                <div className="instructorMiniHeader">
+                  {i.photoUrl ? (
+                    <img className="avatar" src={i.photoUrl} alt={i.fullName} loading="lazy" />
+                  ) : (
+                    <div className="avatar avatarFallback" aria-hidden="true">{initials(i.fullName)}</div>
+                  )}
+                  <div>
+                    <div className="strong">{i.fullName}</div>
+                    <div className="muted small">{i.role || 'Instructor'}</div>
+                  </div>
+                </div>
                 {i.bio ? <div className="muted" style={{ marginTop: 6, whiteSpace: 'pre-wrap' }}>{i.bio}</div> : null}
               </div>
             ))}
@@ -145,8 +155,19 @@ export default function SignInPage() {
                 className={c.id === childId ? 'result selected' : 'result'}
                 onClick={() => setChildId(c.id)}
               >
-                <div className="resultTitle">{c.childFirstName} {c.childLastName}</div>
-                <div className="resultMeta">Tap to choose</div>
+                <div className="resultRow">
+                  {c.photoUrl ? (
+                    <img className="avatar childAvatar" src={publicAssetUrl(c.photoUrl)} alt={`${c.childFirstName} ${c.childLastName}`} loading="lazy" />
+                  ) : (
+                    <div className="avatar avatarFallback childAvatar" aria-hidden="true">
+                      {initials(`${c.childFirstName} ${c.childLastName}`)}
+                    </div>
+                  )}
+                  <div style={{ minWidth: 0 }}>
+                    <div className="resultTitle">{c.childFirstName} {c.childLastName}</div>
+                    <div className="resultMeta">Tap to choose</div>
+                  </div>
+                </div>
               </button>
             ))
           ) : (
@@ -190,7 +211,21 @@ export default function SignInPage() {
           <div className="signedInNowList">
             {signedInNow.map((ev) => (
               <div key={ev.childId} className="signedInNowRow">
-                <div className="signedInNowName">{ev.childName}</div>
+                <div className="signedInNowLeft">
+                  {/* Try to pull a photo from the child profile if available */}
+                  {(() => {
+                    const child = findChildById(ev.childId)
+                    if (child?.photoUrl) {
+                      return (
+                        <img className="avatar childAvatar" src={publicAssetUrl(child.photoUrl)} alt={ev.childName} loading="lazy" />
+                      )
+                    }
+                    return (
+                      <div className="avatar avatarFallback childAvatar" aria-hidden="true">{initials(ev.childName)}</div>
+                    )
+                  })()}
+                  <div className="signedInNowName">{ev.childName}</div>
+                </div>
                 <div className="signedInNowMeta">
                   {new Date(ev.timeISO).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </div>

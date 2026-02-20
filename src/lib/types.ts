@@ -4,6 +4,7 @@ export type ChildProfile = {
   id: ChildId
   childFirstName: string
   childLastName: string
+  photoUrl?: string
   childDob?: string // yyyy-mm-dd
   allergiesNotes?: string
   knownAllergies?: string

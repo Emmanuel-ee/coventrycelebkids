@@ -17,6 +17,7 @@ export default function RegisterChildPage() {
   const [selectedAllergies, setSelectedAllergies] = useState<string[]>([])
   const [otherAllergy, setOtherAllergy] = useState('')
   const [photoCaptureConsent, setPhotoCaptureConsent] = useState(false)
+  const [childPhotoFilename, setChildPhotoFilename] = useState('')
 
   const [parentFullName, setParentFullName] = useState('')
   const [parentPhone, setParentPhone] = useState('')
@@ -54,6 +55,27 @@ export default function RegisterChildPage() {
       'Mould',
       'Medication (please specify)',
       'Skin products / fragrance',
+    ],
+    [],
+  )
+
+  const childPhotoOptions = useMemo(
+    () => [
+      '',
+      'DSC01085.jpg',
+      'DSC02755.jpg',
+      'DSC02756.jpg',
+      'DSC02770.jpg',
+      'DSC02792.jpg',
+      'DSC02793.jpg',
+      'DSC02799.jpg',
+      'DSC02858.jpg',
+      'DSC02870.jpg',
+      'DSC02882.jpg',
+      'DSC02918.jpg',
+      'DSC02928.jpg',
+      'DSC09288.jpg',
+      'a2312705-26e0-4abf-81df-7e4a67182de0.jpg',
     ],
     [],
   )
@@ -97,6 +119,7 @@ export default function RegisterChildPage() {
       id: generatedId,
       childFirstName: childFirstName.trim(),
       childLastName: childLastName.trim(),
+      photoUrl: childPhotoFilename ? `/Instructors/${childPhotoFilename}` : undefined,
       childDob: childDob || undefined,
       allergiesNotes: allergiesNotes.trim() || undefined,
   knownAllergies: computedKnownAllergies.trim() || undefined,
@@ -225,6 +248,21 @@ export default function RegisterChildPage() {
             />
             <span className="muted">Yes, I consent to photos being taken for class use.</span>
           </div>
+        </label>
+
+        <label>
+          Choose a child photo (optional)
+          <div className="muted small">Pick a photo from the device’s built-in gallery (from this app’s public assets).</div>
+          <select value={childPhotoFilename} onChange={(e) => setChildPhotoFilename(e.target.value)}>
+            <option value="">No photo selected</option>
+            {childPhotoOptions
+              .filter((x) => x)
+              .map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+          </select>
         </label>
 
         <hr className="hr" />

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { addEvent, findChildById, findChildrenByName, getInstructorUpdates, getInstructors } from '../lib/storage'
+import { initials, publicAssetUrl } from '../lib/publicPhotos'
 
 function nowId() {
   return `${Date.now()}_${Math.random().toString(16).slice(2)}`
@@ -78,8 +79,17 @@ export default function SignOutPage() {
           <div className="instructorGrid">
             {instructors.map((i) => (
               <div key={i.id} className="instructorMiniCard">
-                <div className="strong">{i.fullName}</div>
-                <div className="muted small">{i.role || 'Instructor'}</div>
+                <div className="instructorMiniHeader">
+                  {i.photoUrl ? (
+                    <img className="avatar" src={i.photoUrl} alt={i.fullName} loading="lazy" />
+                  ) : (
+                    <div className="avatar avatarFallback" aria-hidden="true">{initials(i.fullName)}</div>
+                  )}
+                  <div>
+                    <div className="strong">{i.fullName}</div>
+                    <div className="muted small">{i.role || 'Instructor'}</div>
+                  </div>
+                </div>
                 {i.bio ? <div className="muted" style={{ marginTop: 6, whiteSpace: 'pre-wrap' }}>{i.bio}</div> : null}
               </div>
             ))}
@@ -108,8 +118,19 @@ export default function SignOutPage() {
                 className={c.id === childId ? 'result selected' : 'result'}
                 onClick={() => setChildId(c.id)}
               >
-                <div className="resultTitle">{c.childFirstName} {c.childLastName}</div>
-                <div className="resultMeta">Tap to choose</div>
+                <div className="resultRow">
+                  {c.photoUrl ? (
+                    <img className="avatar childAvatar" src={publicAssetUrl(c.photoUrl)} alt={`${c.childFirstName} ${c.childLastName}`} loading="lazy" />
+                  ) : (
+                    <div className="avatar avatarFallback childAvatar" aria-hidden="true">
+                      {initials(`${c.childFirstName} ${c.childLastName}`)}
+                    </div>
+                  )}
+                  <div style={{ minWidth: 0 }}>
+                    <div className="resultTitle">{c.childFirstName} {c.childLastName}</div>
+                    <div className="resultMeta">Tap to choose</div>
+                  </div>
+                </div>
               </button>
             ))
           ) : (
