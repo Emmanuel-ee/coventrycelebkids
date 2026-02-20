@@ -7,6 +7,7 @@ import SignInPage from './pages/SignInPage'
 import SignOutPage from './pages/SignOutPage'
 import { getTeamPin, isTeamUnlocked, lockTeam, setTeamPin, unlockTeam } from './lib/teamAccess'
 import { useMemo, useState } from 'react'
+import PhotoBackdrop from './components/PhotoBackdrop'
 
 type TeamGateProps = {
   teamUnlocked: boolean
@@ -143,6 +144,7 @@ function App() {
 
   return (
     <div className="app">
+      <PhotoBackdrop />
       <header className="appHeader">
         <div className="brand">
           <img
