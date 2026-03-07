@@ -456,7 +456,12 @@ function App() {
   const signedInChildren = children.filter((child) => child.lastStatus === 'sign_in');
 
   return (
-    <div className="app">
+    <div
+      className="app"
+      style={{
+        '--app-bg-image': `url(${process.env.PUBLIC_URL}/background/DSC01081.jpg)`,
+      }}
+    >
       <header className="app__header">
         <div>
           <h1>
