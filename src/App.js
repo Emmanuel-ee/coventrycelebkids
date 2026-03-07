@@ -69,6 +69,33 @@ const getAgeFromDob = (dateValue) => {
   return age >= 0 ? String(age) : '';
 };
 
+const normalizeValue = (value) => (value || '').trim().toLowerCase();
+
+const knownAllergyValues = new Set(KNOWN_ALLERGIES.map((value) => value.toLowerCase()));
+
+const buildFormFromChild = (child) => {
+  const normalizedSex = normalizeValue(child.sex);
+  const isStandardSex = normalizedSex === 'female' || normalizedSex === 'male';
+  const normalizedAllergies = normalizeValue(child.allergies);
+  const allergiesSelection = normalizedAllergies && knownAllergyValues.has(normalizedAllergies)
+    ? child.allergies
+    : child.allergies
+      ? 'Other'
+      : '';
+  return {
+    name: child.name || '',
+    dateOfBirth: child.dateOfBirth || '',
+    sex: isStandardSex ? (normalizedSex === 'female' ? 'Female' : 'Male') : child.sex ? 'Other' : '',
+    sexOther: isStandardSex ? '' : child.sex || '',
+    guardianName: child.guardianName || '',
+    guardianContact: child.guardianContact || '',
+    allergiesSelection,
+    allergiesOther: allergiesSelection === 'Other' ? child.allergies || '' : '',
+    allowPhotos: Boolean(child.allowPhotos),
+    notes: child.notes || '',
+  };
+};
+
 
 const createId = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
@@ -174,6 +201,18 @@ function App() {
     allowPhotos: false,
     notes: '',
   });
+  const [updateForm, setUpdateForm] = React.useState({
+    name: '',
+    dateOfBirth: '',
+    sex: '',
+    sexOther: '',
+    guardianName: '',
+    guardianContact: '',
+    allergiesSelection: '',
+    allergiesOther: '',
+    allowPhotos: false,
+    notes: '',
+  });
 
   React.useEffect(() => {
     try {
@@ -218,6 +257,10 @@ function App() {
     }, 4000);
     return () => clearTimeout(timer);
   }, [supabaseStatus]);
+
+  React.useEffect(() => {
+    setError('');
+  }, [view]);
 
   React.useEffect(() => {
     if (!isSupabaseEnabled) {
@@ -298,6 +341,21 @@ function App() {
     }));
   };
 
+  const handleUpdateChange = (event) => {
+    const { name, value, type, checked } = event.target;
+    setError('');
+    setUpdateForm((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
+  };
+
+  const handleStartUpdate = (child) => {
+    setUpdateForm(buildFormFromChild(child));
+    setSelectedChild(child);
+    setView('update');
+  };
+
   const handleAddChild = async (event) => {
     event.preventDefault();
     setError('');
@@ -317,30 +375,53 @@ function App() {
       setError('Please specify the sex when selecting Other.');
       return;
     }
-  const dateOfBirth = childForm.dateOfBirth;
-  const derivedAge = getAgeFromDob(dateOfBirth);
+    const dateOfBirth = childForm.dateOfBirth;
+    const derivedAge = getAgeFromDob(dateOfBirth);
+    const derivedClassCategory = getClassCategory(derivedAge);
     const parsedAge = Number.parseInt(derivedAge, 10);
     if (!Number.isNaN(parsedAge) && parsedAge >= 13) {
       setError('Children aged 13 and above should register in Celeb Teens. Please inform the parent.');
       setSupabaseStatus('');
       return;
     }
+    const formSex = childForm.sex === 'Other' ? childForm.sexOther.trim() : childForm.sex;
+    const existingChild = children.find((child) =>
+      normalizeValue(child.name) === normalizeValue(childForm.name)
+      && normalizeValue(child.sex) === normalizeValue(formSex)
+      && normalizeValue(child.guardianContact) === normalizeValue(childForm.guardianContact)
+    );
+    const matchesRegistrationDetails = existingChild
+      && normalizeValue(existingChild.dateOfBirth) === normalizeValue(dateOfBirth)
+      && normalizeValue(existingChild.guardianName) === normalizeValue(childForm.guardianName)
+      && normalizeValue(existingChild.classCategory) === normalizeValue(derivedClassCategory);
+    if (existingChild) {
+      setError(
+        matchesRegistrationDetails
+          ? 'This child is already registered. Please sign in and use Update Details if you need to add new information.'
+          : 'A child with this name is already registered. Please sign in and use Update Details if you need to add new information.'
+      );
+      setSupabaseStatus('');
+      return;
+    }
+
     const newChild = {
       id: createId(),
       name: childForm.name.trim(),
-      age: derivedAge,
-  dateOfBirth,
-      sex: childForm.sex === 'Other' ? childForm.sexOther.trim() : childForm.sex,
+    age: derivedAge,
+    dateOfBirth,
+      sex: formSex,
       guardianName: childForm.guardianName.trim(),
       guardianContact: childForm.guardianContact.trim(),
       allergies:
         childForm.allergiesSelection === 'Other'
           ? childForm.allergiesOther.trim()
           : childForm.allergiesSelection.trim(),
-      classCategory: getClassCategory(derivedAge),
+      classCategory: derivedClassCategory,
       allowPhotos: childForm.allowPhotos,
       notes: childForm.notes.trim(),
       createdAt: new Date().toISOString(),
+      lastStatus: '',
+      lastActionAt: '',
     };
 
     if (isSupabaseEnabled) {
@@ -357,6 +438,9 @@ function App() {
     }
 
     setChildren((prev) => [newChild, ...prev]);
+    if (!isSupabaseEnabled) {
+      setSupabaseStatus('Child registered locally.');
+    }
     setChildForm({
       name: '',
   dateOfBirth: '',
@@ -371,6 +455,78 @@ function App() {
     });
     localStorage.removeItem(DRAFT_KEY);
     setView('checkin');
+  };
+
+  const handleUpdateChild = async (event) => {
+    event.preventDefault();
+    if (!selectedChild) {
+      return;
+    }
+    setError('');
+    if (!updateForm.name.trim()) {
+      setError("Child's name is required.");
+      return;
+    }
+    if (!updateForm.sex) {
+      setError("Please select the child's sex.");
+      return;
+    }
+    if (!updateForm.guardianContact.trim()) {
+      setError('Guardian contact is required.');
+      return;
+    }
+    if (updateForm.sex === 'Other' && !updateForm.sexOther.trim()) {
+      setError('Please specify the sex when selecting Other.');
+      return;
+    }
+
+    const dateOfBirth = updateForm.dateOfBirth;
+    const derivedAge = getAgeFromDob(dateOfBirth);
+    const derivedClassCategory = getClassCategory(derivedAge);
+    const parsedAge = Number.parseInt(derivedAge, 10);
+    if (!Number.isNaN(parsedAge) && parsedAge >= 13) {
+      setError('Children aged 13 and above should register in Celeb Teens. Please inform the parent.');
+      setSupabaseStatus('');
+      return;
+    }
+
+    const updatedChild = {
+      ...selectedChild,
+      name: updateForm.name.trim(),
+      age: derivedAge,
+      dateOfBirth,
+      sex: updateForm.sex === 'Other' ? updateForm.sexOther.trim() : updateForm.sex,
+      guardianName: updateForm.guardianName.trim(),
+      guardianContact: updateForm.guardianContact.trim(),
+      allergies:
+        updateForm.allergiesSelection === 'Other'
+          ? updateForm.allergiesOther.trim()
+          : updateForm.allergiesSelection.trim(),
+      classCategory: derivedClassCategory,
+      allowPhotos: updateForm.allowPhotos,
+      notes: updateForm.notes.trim(),
+    };
+
+    if (isSupabaseEnabled) {
+      setSupabaseStatus('');
+      const { error: updateError } = await supabase
+        .from('children')
+        .update(mapChildToDb(updatedChild))
+        .eq('id', selectedChild.id);
+      if (updateError) {
+        setError(`Unable to update child details. ${updateError.message}`);
+        return;
+      }
+      setSupabaseStatus('Child details updated in Supabase.');
+    } else {
+      setSupabaseStatus('Child details updated.');
+    }
+
+    setChildren((prev) =>
+      prev.map((record) => (record.id === selectedChild.id ? updatedChild : record))
+    );
+    setSelectedChild(updatedChild);
+    setView('details');
   };
 
   const recordCheckin = async (child, action) => {
@@ -457,6 +613,14 @@ function App() {
         lastActionAt: result.timestamp,
       });
       setView('details');
+    }
+    if (result.success && type === 'sign_out') {
+      setSelectedChild((prev) =>
+        prev && prev.id === child.id
+          ? { ...prev, lastStatus: type, lastActionAt: result.timestamp }
+          : prev
+      );
+      setView('home');
     }
     setConfirmAction(null);
   };
@@ -676,6 +840,140 @@ function App() {
           </section>
         )}
 
+        {view === 'update' && selectedChild && (
+          <section className="card">
+            <div className="card__header">
+              <div>
+                <h2>Update child details</h2>
+                <p className="card__subtitle">Add new information or request updates.</p>
+              </div>
+              <button className="ghost" type="button" onClick={() => setView('details')}>
+                Back
+              </button>
+            </div>
+            <form className="form" onSubmit={handleUpdateChild}>
+              <label>
+                Child's name
+                <input
+                  type="text"
+                  name="name"
+                  value={updateForm.name}
+                  onChange={handleUpdateChange}
+                  placeholder="e.g. Ada Johnson"
+                  required
+                />
+              </label>
+              <label>
+                Date of birth
+                <input
+                  type="date"
+                  className="dob-picker"
+                  name="dateOfBirth"
+                  value={updateForm.dateOfBirth}
+                  onChange={handleUpdateChange}
+                  max={new Date().toISOString().split('T')[0]}
+                />
+                {getClassCategory(getAgeFromDob(updateForm.dateOfBirth)) && (
+                  <span className="helper">
+                    Class: {getClassCategory(getAgeFromDob(updateForm.dateOfBirth))}
+                  </span>
+                )}
+              </label>
+              <label>
+                Sex
+                <select
+                  name="sex"
+                  value={updateForm.sex}
+                  onChange={handleUpdateChange}
+                >
+                  <option value="">Select</option>
+                  <option value="Female">Female</option>
+                  <option value="Male">Male</option>
+                  <option value="Other">Other</option>
+                </select>
+              </label>
+              {updateForm.sex === 'Other' && (
+                <label>
+                  Specify sex
+                  <input
+                    type="text"
+                    name="sexOther"
+                    value={updateForm.sexOther}
+                    onChange={handleUpdateChange}
+                    placeholder="Type here"
+                  />
+                </label>
+              )}
+              <label>
+                Guardian name
+                <input
+                  type="text"
+                  name="guardianName"
+                  value={updateForm.guardianName}
+                  onChange={handleUpdateChange}
+                  placeholder="Parent/guardian name"
+                />
+              </label>
+              <label>
+                Guardian contact
+                <input
+                  type="text"
+                  name="guardianContact"
+                  value={updateForm.guardianContact}
+                  onChange={handleUpdateChange}
+                  placeholder="Phone number"
+                />
+              </label>
+              <label>
+                Allergies
+                <select
+                  name="allergiesSelection"
+                  value={updateForm.allergiesSelection}
+                  onChange={handleUpdateChange}
+                >
+                  <option value="">Select an allergy</option>
+                  {KNOWN_ALLERGIES.map((allergy) => (
+                    <option key={allergy} value={allergy}>
+                      {allergy}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {updateForm.allergiesSelection === 'Other' && (
+                <label>
+                  Specify allergy
+                  <input
+                    type="text"
+                    name="allergiesOther"
+                    value={updateForm.allergiesOther}
+                    onChange={handleUpdateChange}
+                    placeholder="Type the allergy"
+                  />
+                </label>
+              )}
+              <label className="checkbox">
+                <input
+                  type="checkbox"
+                  name="allowPhotos"
+                  checked={updateForm.allowPhotos}
+                  onChange={handleUpdateChange}
+                />
+                Would you want your child's picture captured?
+              </label>
+              <label>
+                Notes
+                <textarea
+                  name="notes"
+                  value={updateForm.notes}
+                  onChange={handleUpdateChange}
+                  placeholder="Allergies, pickup notes, etc."
+                />
+              </label>
+              <button type="submit">Save updates</button>
+            </form>
+          </section>
+        )}
+
         {view === 'checkin' && (
           <>
             <section className="card">
@@ -804,6 +1102,11 @@ function App() {
               <div>
                 <strong>Name:</strong> {selectedChild.name}
               </div>
+              {selectedChild.age && (
+                <div>
+                  <strong>Age:</strong> {selectedChild.age}
+                </div>
+              )}
               {selectedChild.classCategory && (
                 <div>
                   <strong>Class:</strong> {selectedChild.classCategory}
@@ -835,10 +1138,31 @@ function App() {
                 </div>
               )}
               <div>
+                <strong>Photo consent:</strong> {selectedChild.allowPhotos ? 'Yes' : 'No'}
+              </div>
+              {selectedChild.notes && (
+                <div>
+                  <strong>Notes:</strong> {selectedChild.notes}
+                </div>
+              )}
+              {selectedChild.lastActionAt && (
+                <div>
+                  <strong>Last activity:</strong> {new Date(selectedChild.lastActionAt).toLocaleString()}
+                </div>
+              )}
+              {selectedChild.createdAt && (
+                <div>
+                  <strong>Registered:</strong> {new Date(selectedChild.createdAt).toLocaleString()}
+                </div>
+              )}
+              <div>
                   <strong>Status:</strong> {selectedChild.lastStatus === 'sign_in' ? 'Signed in' : 'Signed out'}
               </div>
             </div>
               <div className="button-row">
+                <button type="button" className="ghost" onClick={() => handleStartUpdate(selectedChild)}>
+                  Update details
+                </button>
                 {selectedChild.lastStatus === 'sign_in' ? (
                   <button type="button" onClick={() => requestSignOut(selectedChild)}>
                     Sign out
