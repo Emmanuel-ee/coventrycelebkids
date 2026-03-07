@@ -61,6 +61,53 @@ alter table public.children
 	add column if not exists last_status text,
 	add column if not exists last_action_at timestamptz,
 	add column if not exists allow_photos boolean default false;
+	add column if not exists notes text;
+
+```
+
+### Announcements table
+
+Create an `announcements` table to manage public updates on the home page:
+
+```
+create table if not exists public.announcements (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  message text not null,
+  created_at timestamptz not null default now()
+);
+
+alter table public.announcements enable row level security;
+
+create policy "Allow anon announcements read"
+on public.announcements
+for select
+to anon
+using (true);
+
+create policy "Allow authenticated announcements insert"
+on public.announcements
+for insert
+to authenticated
+with check (true);
+
+create policy "Allow authenticated announcements update"
+on public.announcements
+for update
+to authenticated
+using (true)
+with check (true);
+
+create policy "Allow authenticated announcements delete"
+on public.announcements
+for delete
+to authenticated
+using (true);
+
+insert into public.announcements (title, message)
+values
+  ('Welcome to Celebkids', 'Please register once, then sign in/out each week.'),
+  ('Safety reminders', 'Notify a leader about allergies or pickup changes.');
 
 ### Check-in/out table
 

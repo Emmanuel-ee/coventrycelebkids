@@ -21,6 +21,19 @@ const KNOWN_ALLERGIES = [
   'Other',
 ];
 
+const DEFAULT_ANNOUNCEMENTS = [
+  {
+    id: 'welcome',
+    title: 'Welcome to Celebkids',
+    message: 'Please register once, then sign in/out each week.',
+  },
+  {
+    id: 'safety',
+    title: 'Safety reminders',
+    message: 'Notify a leader about allergies or pickup changes.',
+  },
+];
+
 const getClassCategory = (ageValue) => {
   const parsedAge = Number.parseInt(ageValue, 10);
   if (Number.isNaN(parsedAge)) {
@@ -67,6 +80,17 @@ const getAgeFromDob = (dateValue) => {
     age -= 1;
   }
   return age >= 0 ? String(age) : '';
+};
+
+const isBirthdayToday = (dateValue, today = new Date()) => {
+  if (!dateValue) {
+    return false;
+  }
+  const parsed = new Date(dateValue);
+  if (Number.isNaN(parsed.getTime())) {
+    return false;
+  }
+  return parsed.getDate() === today.getDate() && parsed.getMonth() === today.getMonth();
 };
 
 const normalizeValue = (value) => (value || '').trim().toLowerCase();
@@ -189,6 +213,9 @@ function App() {
   const [searchTerm, setSearchTerm] = React.useState('');
   const [selectedChild, setSelectedChild] = React.useState(null);
   const [confirmAction, setConfirmAction] = React.useState(null);
+  const birthdayAlertsRef = React.useRef(new Set());
+  const [announcements, setAnnouncements] = React.useState(DEFAULT_ANNOUNCEMENTS);
+  const [announcementsStatus, setAnnouncementsStatus] = React.useState('');
   const [childForm, setChildForm] = React.useState({
   name: '',
   dateOfBirth: '',
@@ -321,8 +348,58 @@ function App() {
           createdAt: checkin.created_at,
         }))
       );
-      setChildren(mergedChildren);
+      const today = new Date();
+      const childrenWithUpdatedAges = mergedChildren.map((child) => {
+        const derivedAge = getAgeFromDob(child.dateOfBirth);
+        if (derivedAge && derivedAge !== child.age) {
+          return { ...child, age: derivedAge };
+        }
+        return child;
+      });
+
+      setChildren(childrenWithUpdatedAges);
       setIsLoading(false);
+
+      if (childrenWithUpdatedAges.length) {
+        const seen = birthdayAlertsRef.current;
+        childrenWithUpdatedAges.forEach((child) => {
+          if (child.dateOfBirth && isBirthdayToday(child.dateOfBirth, today) && !seen.has(child.id)) {
+            alert(`Happy birthday ${child.name}!`);
+            seen.add(child.id);
+          }
+        });
+      }
+
+      const updates = childrenWithUpdatedAges.filter(
+        (child, index) => child.age !== mergedChildren[index].age
+      );
+      if (isSupabaseEnabled && updates.length) {
+        await Promise.all(
+          updates.map((child) =>
+            supabase
+              .from('children')
+              .update({ age: child.age })
+              .eq('id', child.id)
+          )
+        );
+      }
+
+      const { data: announcementData, error: announcementError } = await supabase
+        .from('announcements')
+        .select('id, title, message, created_at')
+        .order('created_at', { ascending: false });
+      if (announcementError) {
+        setAnnouncementsStatus('Unable to load announcements from Supabase.');
+      } else {
+        const mappedAnnouncements = (announcementData || []).map((announcement) => ({
+          id: announcement.id,
+          title: announcement.title || 'Announcement',
+          message: announcement.message || '',
+          createdAt: announcement.created_at || '',
+        }));
+        setAnnouncements(mappedAnnouncements.length ? mappedAnnouncements : DEFAULT_ANNOUNCEMENTS);
+        setAnnouncementsStatus('');
+      }
     };
 
     fetchChildren();
@@ -331,6 +408,32 @@ function App() {
       isActive = false;
     };
   }, []);
+
+  React.useEffect(() => {
+    if (isSupabaseEnabled || children.length === 0) {
+      return;
+    }
+    const today = new Date();
+    let needsUpdate = false;
+    const updatedChildren = children.map((child) => {
+      const derivedAge = getAgeFromDob(child.dateOfBirth);
+      if (derivedAge && derivedAge !== child.age) {
+        needsUpdate = true;
+        return { ...child, age: derivedAge };
+      }
+      return child;
+    });
+    if (needsUpdate) {
+      setChildren(updatedChildren);
+    }
+    const seen = birthdayAlertsRef.current;
+    updatedChildren.forEach((child) => {
+      if (child.dateOfBirth && isBirthdayToday(child.dateOfBirth, today) && !seen.has(child.id)) {
+        alert(`Happy birthday ${child.name}!`);
+        seen.add(child.id);
+      }
+    });
+  }, [children]);
 
   const handleChildChange = (event) => {
     const { name, value, type, checked } = event.target;
@@ -684,31 +787,52 @@ function App() {
       </header>
       <main className="app__grid">
         {view === 'home' && (
-          <section className="card card--center">
-            <div className="home-hero">
-              <h2>Welcome, parents & guardians!</h2>
-              <p className="home-hero__text">
-                Start by registering your child, then come back here for drop-off and pick-up.
-              </p>
-            </div>
-            <div className="home-actions">
-              <button
-                type="button"
-                className="button--primary"
-                onClick={() => setView('register')}
-              >
-                Register your Child
-              </button>
-              <button
-                type="button"
-                className="button--secondary"
-                onClick={() => setView('checkin')}
-              >
-                Drop off / Pick up
-              </button>
-            </div>
-            {isLoading && <div className="empty">Connecting to Supabase…</div>}
-          </section>
+          <>
+            <section className="card card--center">
+              <div className="home-hero">
+                <h2>Welcome, parents & guardians!</h2>
+                <p className="home-hero__text">
+                  Start by registering your child, then come back here for drop-off and pick-up.
+                </p>
+              </div>
+              <div className="home-actions">
+                <button
+                  type="button"
+                  className="button--primary"
+                  onClick={() => setView('register')}
+                >
+                  Register your Child
+                </button>
+                <button
+                  type="button"
+                  className="button--secondary"
+                  onClick={() => setView('checkin')}
+                >
+                  Drop off / Pick up
+                </button>
+              </div>
+              {isLoading && <div className="empty">Connecting to Supabase…</div>}
+            </section>
+            <section className="card">
+              <div className="card__header">
+                <div>
+                  <h2>Announcements</h2>
+                  <p className="card__subtitle">Updates for parents and guardians.</p>
+                </div>
+              </div>
+              {announcementsStatus && <div className="empty">{announcementsStatus}</div>}
+              <ul className="list">
+                {announcements.map((announcement) => (
+                  <li key={announcement.id} className="list__item">
+                    <div>
+                      <h3>{announcement.title}</h3>
+                      <p className="list__notes">{announcement.message}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          </>
         )}
 
         {view === 'register' && (
