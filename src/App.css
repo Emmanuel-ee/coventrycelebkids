@@ -53,6 +53,16 @@ body {
   color: #1447f0;
 }
 
+.app__logo {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 4px;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+}
+
 .app__status {
   display: grid;
   gap: 10px;

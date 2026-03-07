@@ -459,15 +459,20 @@ function App() {
     <div className="app">
       <header className="app__header">
         <div>
-          <p className="app__eyebrow">In Christ For Christ With Joy</p>
           <h1>
             <button
               type="button"
               className="title-button"
               onClick={() => setView('home')}
             >
+              <img
+                src={`${process.env.PUBLIC_URL}/logo/Asset%20203.svg`}
+                alt="Coventry Celebkids"
+                className="app__logo"
+              />
               Coventry Celebkids
             </button>
+            <p className="app__eyebrow">In Christ For Christ With Joy</p>
           </h1>
         </div>
         <div className="app__status">
@@ -589,7 +594,7 @@ function App() {
                   checked={childForm.allowPhotos}
                   onChange={handleChildChange}
                 />
-                Would you want your child's pics captured?
+                Would you want your child's picture captured?
               </label>
               <label>
                 Notes
