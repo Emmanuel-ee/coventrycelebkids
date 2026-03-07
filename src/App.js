@@ -485,17 +485,29 @@ function App() {
           {error && <div className="status status--error">{error}</div>}
         </div>
       </header>
-
-      <button type="button" onClick={() => setView('checkin')}>
-        Drop off / Pick up
-      </button>
       <main className="app__grid">
         {view === 'home' && (
           <section className="card card--center">
-            <h2>Welcome!</h2>
-            <div className="button-row">
-              <button type="button" onClick={() => setView('register')}>
+            <div className="home-hero">
+              <h2>Welcome, parents & guardians!</h2>
+              <p className="home-hero__text">
+                Start by registering your child, then come back here for drop-off and pick-up.
+              </p>
+            </div>
+            <div className="home-actions">
+              <button
+                type="button"
+                className="button--primary"
+                onClick={() => setView('register')}
+              >
                 Register your Child
+              </button>
+              <button
+                type="button"
+                className="button--secondary"
+                onClick={() => setView('checkin')}
+              >
+                Drop off / Pick up
               </button>
             </div>
             {isLoading && <div className="empty">Connecting to Supabase…</div>}
