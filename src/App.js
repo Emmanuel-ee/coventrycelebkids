@@ -95,6 +95,16 @@ const isBirthdayToday = (dateValue, today = new Date()) => {
 
 const normalizeValue = (value) => (value || '').trim().toLowerCase();
 
+const truncateMessage = (message, limit = 120) => {
+  if (!message) {
+    return '';
+  }
+  if (message.length <= limit) {
+    return message;
+  }
+  return `${message.slice(0, limit - 1).trim()}…`;
+};
+
 const knownAllergyValues = new Set(KNOWN_ALLERGIES.map((value) => value.toLowerCase()));
 
 const buildFormFromChild = (child) => {
@@ -216,6 +226,7 @@ function App() {
   const birthdayAlertsRef = React.useRef(new Set());
   const [announcements, setAnnouncements] = React.useState(DEFAULT_ANNOUNCEMENTS);
   const [announcementsStatus, setAnnouncementsStatus] = React.useState('');
+  const [selectedAnnouncement, setSelectedAnnouncement] = React.useState(null);
   const [childForm, setChildForm] = React.useState({
   name: '',
   dateOfBirth: '',
@@ -823,10 +834,21 @@ function App() {
               {announcementsStatus && <div className="empty">{announcementsStatus}</div>}
               <ul className="list">
                 {announcements.map((announcement) => (
-                  <li key={announcement.id} className="list__item">
+                  <li
+                    key={announcement.id}
+                    className="list__item list__item--clickable"
+                    onClick={() => setSelectedAnnouncement(announcement)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        setSelectedAnnouncement(announcement);
+                      }
+                    }}
+                  >
                     <div>
                       <h3>{announcement.title}</h3>
-                      <p className="list__notes">{announcement.message}</p>
+                      <p className="list__notes">{truncateMessage(announcement.message)}</p>
                     </div>
                   </li>
                 ))}
@@ -1324,6 +1346,19 @@ function App() {
               </button>
               <button className="ghost" type="button" onClick={handleCancelAction}>
                 Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {selectedAnnouncement && (
+        <div className="modal-overlay" role="dialog" aria-modal="true">
+          <div className="modal">
+            <h3>{selectedAnnouncement.title}</h3>
+            <p className="modal__subtitle">{selectedAnnouncement.message}</p>
+            <div className="button-row">
+              <button type="button" onClick={() => setSelectedAnnouncement(null)}>
+                Close
               </button>
             </div>
           </div>
