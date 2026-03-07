@@ -486,6 +486,9 @@ function App() {
         </div>
       </header>
 
+      <button type="button" onClick={() => setView('checkin')}>
+        Drop off / Pick up
+      </button>
       <main className="app__grid">
         {view === 'home' && (
           <section className="card card--center">
@@ -493,9 +496,6 @@ function App() {
             <div className="button-row">
               <button type="button" onClick={() => setView('register')}>
                 Register your Child
-              </button>
-              <button type="button" onClick={() => setView('checkin')}>
-                Drop off / Pick up
               </button>
             </div>
             {isLoading && <div className="empty">Connecting to Supabase…</div>}
