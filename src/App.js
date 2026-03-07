@@ -69,6 +69,7 @@ const getAgeFromDob = (dateValue) => {
   return age >= 0 ? String(age) : '';
 };
 
+
 const createId = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
 const loadLocalChildren = () => {
@@ -102,6 +103,7 @@ const mapChildFromDb = (child) => ({
   name: child.name || '',
   age: child.age || '',
   dateOfBirth: child.date_of_birth || child.dateOfBirth || '',
+  sex: child.sex || '',
   guardianName: child.guardian_name || child.guardianName || '',
   guardianContact: child.guardian_contact || child.guardianContact || '',
   allergies: child.allergies || '',
@@ -121,6 +123,7 @@ const mapChildToDb = (child) => ({
   name: child.name,
   age: child.age || null,
   date_of_birth: child.dateOfBirth || null,
+  sex: child.sex || null,
   guardian_name: child.guardianName || null,
   guardian_contact: child.guardianContact || null,
   allergies: child.allergies || null,
@@ -160,8 +163,10 @@ function App() {
   const [selectedChild, setSelectedChild] = React.useState(null);
   const [confirmAction, setConfirmAction] = React.useState(null);
   const [childForm, setChildForm] = React.useState({
-    name: '',
-    dateOfBirth: '',
+  name: '',
+  dateOfBirth: '',
+    sex: '',
+    sexOther: '',
     guardianName: '',
     guardianContact: '',
     allergiesSelection: '',
@@ -297,9 +302,23 @@ function App() {
     event.preventDefault();
     setError('');
     if (!childForm.name.trim()) {
+      setError("Child's name is required.");
       return;
     }
-    const derivedAge = getAgeFromDob(childForm.dateOfBirth);
+    if (!childForm.sex) {
+      setError("Please select the child's sex.");
+      return;
+    }
+    if (!childForm.guardianContact.trim()) {
+      setError("Guardian contact is required.");
+      return;
+    }
+    if (childForm.sex === 'Other' && !childForm.sexOther.trim()) {
+      setError('Please specify the sex when selecting Other.');
+      return;
+    }
+  const dateOfBirth = childForm.dateOfBirth;
+  const derivedAge = getAgeFromDob(dateOfBirth);
     const parsedAge = Number.parseInt(derivedAge, 10);
     if (!Number.isNaN(parsedAge) && parsedAge >= 13) {
       setError('Children aged 13 and above should register in Celeb Teens. Please inform the parent.');
@@ -310,7 +329,8 @@ function App() {
       id: createId(),
       name: childForm.name.trim(),
       age: derivedAge,
-      dateOfBirth: childForm.dateOfBirth,
+  dateOfBirth,
+      sex: childForm.sex === 'Other' ? childForm.sexOther.trim() : childForm.sex,
       guardianName: childForm.guardianName.trim(),
       guardianContact: childForm.guardianContact.trim(),
       allergies:
@@ -339,7 +359,9 @@ function App() {
     setChildren((prev) => [newChild, ...prev]);
     setChildForm({
       name: '',
-      dateOfBirth: '',
+  dateOfBirth: '',
+      sex: '',
+      sexOther: '',
       guardianName: '',
       guardianContact: '',
       allergiesSelection: '',
@@ -348,6 +370,7 @@ function App() {
       notes: '',
     });
     localStorage.removeItem(DRAFT_KEY);
+    setView('checkin');
   };
 
   const recordCheckin = async (child, action) => {
@@ -543,13 +566,14 @@ function App() {
                 />
               </label>
               <label>
-                Date of birth (DD/MM/YYYY)
+                Date of birth
                 <input
-                  type="text"
+                  type="date"
+                  className="dob-picker"
                   name="dateOfBirth"
                   value={childForm.dateOfBirth}
                   onChange={handleChildChange}
-                  placeholder="e.g. 01/05/2018"
+                  max={new Date().toISOString().split('T')[0]}
                 />
                 {getClassCategory(getAgeFromDob(childForm.dateOfBirth)) && (
                   <span className="helper">
@@ -557,6 +581,31 @@ function App() {
                   </span>
                 )}
               </label>
+              <label>
+                Sex
+                <select
+                  name="sex"
+                  value={childForm.sex}
+                  onChange={handleChildChange}
+                >
+                  <option value="">Select</option>
+                  <option value="Female">Female</option>
+                  <option value="Male">Male</option>
+                  <option value="Other">Other</option>
+                </select>
+              </label>
+              {childForm.sex === 'Other' && (
+                <label>
+                  Specify sex
+                  <input
+                    type="text"
+                    name="sexOther"
+                    value={childForm.sexOther}
+                    onChange={handleChildChange}
+                    placeholder="Type here"
+                  />
+                </label>
+              )}
               <label>
                 Guardian name
                 <input
@@ -773,6 +822,11 @@ function App() {
               {selectedChild.dateOfBirth && (
                 <div>
                   <strong>Date of birth:</strong> {selectedChild.dateOfBirth}
+                </div>
+              )}
+              {selectedChild.sex && (
+                <div>
+                  <strong>Sex:</strong> {selectedChild.sex}
                 </div>
               )}
               {selectedChild.allergies && (

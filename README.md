@@ -35,6 +35,7 @@ REACT_APP_SUPABASE_ANON_KEY=your-anon-key
 | name | text | Child name |
 | age | text | Optional |
 | date_of_birth | date | Optional |
+| sex | text | Optional |
 | guardian_name | text | Parent/guardian name |
 | guardian_contact | text | Phone or contact |
 | allergies | text | Optional |
@@ -52,6 +53,7 @@ If you already created the `children` table, run this in Supabase SQL editor:
 ```
 alter table public.children
 	add column if not exists date_of_birth date,
+	add column if not exists sex text,
 	add column if not exists guardian_name text,
 	add column if not exists guardian_contact text,
 	add column if not exists allergies text,

@@ -138,6 +138,10 @@ body {
   max-width: 360px;
 }
 
+.dob-picker {
+  width: 100%;
+}
+
 .button--primary {
   font-size: 16px;
   padding: 14px 18px;
