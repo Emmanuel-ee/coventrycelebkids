@@ -134,6 +134,34 @@ on public.checkins
 for insert
 to anon
 with check (true);
+
+### Child messages table
+
+Use this table to store messages for each child. Messages can be sent by parents or team members, and can be streamed in realtime with Supabase.
+
+```
+create table if not exists public.child_messages (
+	id uuid primary key default gen_random_uuid(),
+	child_id text references public.children(id) on delete cascade,
+	sender_name text,
+	message text not null,
+	created_at timestamptz not null default now()
+);
+
+alter table public.child_messages enable row level security;
+
+create policy "Allow anon child messages read"
+on public.child_messages
+for select
+to anon
+using (true);
+
+create policy "Allow anon child messages insert"
+on public.child_messages
+for insert
+to anon
+with check (true);
+```
 ```
 ```
 

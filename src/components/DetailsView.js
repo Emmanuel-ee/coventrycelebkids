@@ -1,20 +1,50 @@
 import React from 'react';
 
-const DetailsView = ({ selectedChild, onBack, onStartUpdate, requestSignIn, requestSignOut }) => (
-  <section className="card">
+const DetailsView = ({
+  selectedChild,
+  onBack,
+  onGoHome,
+  onStartUpdate,
+  requestSignIn,
+  requestSignOut,
+  isBirthdayToday,
+  messages,
+  messagesStatus,
+  messageDraft,
+  onMessageDraftChange,
+  onSendMessage,
+  isSendingMessage,
+  typingUsers,
+  onTyping,
+}) => (
+  <section
+    className={`card${
+      selectedChild.dateOfBirth && isBirthdayToday(selectedChild.dateOfBirth)
+        ? ' card--birthday'
+        : ''
+    }`}
+  >
     <div className="card__header">
       <div>
         <h2>{selectedChild.name}</h2>
         <p className="card__subtitle">Here are the child details.</p>
       </div>
-      <button className="ghost" type="button" onClick={onBack}>
-        Drop-off / Pick up
-      </button>
+      <div className="button-row">
+        <button className="ghost" type="button" onClick={onBack}>
+          Drop-off / Pick up
+        </button>
+        <button className="ghost" type="button" onClick={onGoHome}>
+          Home
+        </button>
+      </div>
     </div>
     <div className="form">
       <div>
         <strong>Name:</strong> {selectedChild.name}
       </div>
+      {selectedChild.dateOfBirth && isBirthdayToday(selectedChild.dateOfBirth) && (
+        <div className="birthday-banner">🎉 Happy Birthday {selectedChild.name}</div>
+      )}
       {selectedChild.age && (
         <div>
           <strong>Age:</strong> {selectedChild.age}
@@ -85,6 +115,76 @@ const DetailsView = ({ selectedChild, onBack, onStartUpdate, requestSignIn, requ
           Sign in
         </button>
       )}
+    </div>
+    <div className="divider" />
+    <div className="message-section">
+      <h3>Messages</h3>
+      <p className="card__subtitle">Recent notes for this child.</p>
+      {messagesStatus && <div className="empty">{messagesStatus}</div>}
+      {typingUsers.length > 0 && (
+        <div className="typing-indicator">
+          {typingUsers.map((user, index) => (
+            <span key={user.sender}>
+              {user.sender} is typing
+              {index < typingUsers.length - 1 ? ' • ' : ''}
+            </span>
+          ))}
+        </div>
+      )}
+      {messages.length === 0 ? (
+        <div className="empty">No messages yet. Start a conversation below.</div>
+      ) : (
+        <ul className="message-list">
+          {messages.map((message) => (
+            <li key={message.id} className="message-item">
+              <div className="message-item__header">
+                <strong>{message.sender}</strong>
+                {message.createdAt && (
+                  <span>{new Date(message.createdAt).toLocaleString()}</span>
+                )}
+              </div>
+              <p>{message.message}</p>
+            </li>
+          ))}
+        </ul>
+      )}
+      <form
+        className="message-form"
+        onSubmit={(event) => {
+          event.preventDefault();
+          onSendMessage();
+        }}
+      >
+        <label>
+          Sender name (optional)
+          <input
+            type="text"
+            value={messageDraft.sender}
+            onChange={(event) =>
+              onMessageDraftChange((prev) => ({ ...prev, sender: event.target.value }))
+            }
+            placeholder="Only needed if not the guardian"
+          />
+          {selectedChild.guardianName && (
+            <span className="helper">Default: {selectedChild.guardianName}</span>
+          )}
+        </label>
+        <label>
+          Message
+          <textarea
+            value={messageDraft.message}
+            onChange={(event) =>
+              onMessageDraftChange((prev) => ({ ...prev, message: event.target.value }))
+            }
+            onInput={onTyping}
+            placeholder="Share a note for the team or guardian..."
+            required
+          />
+        </label>
+        <button type="submit" disabled={isSendingMessage}>
+          {isSendingMessage ? 'Sending...' : 'Send message'}
+        </button>
+      </form>
     </div>
   </section>
 );

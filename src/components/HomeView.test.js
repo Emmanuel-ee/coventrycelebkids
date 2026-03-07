@@ -16,6 +16,7 @@ describe('HomeView', () => {
         onCheckin={onCheckin}
         announcements={[{ id: '1', title: 'Hello', message: 'Welcome parents!' }]}
         announcementsStatus=""
+        birthdayChildren={[]}
         onSelectAnnouncement={onSelectAnnouncement}
         truncateMessage={(message) => message}
       />

@@ -6,6 +6,7 @@ import {
   DRAFT_KEY,
   DEFAULT_ANNOUNCEMENTS,
   KNOWN_ALLERGIES,
+  MESSAGES_KEY,
   STORAGE_KEY,
 } from './constants';
 import {
@@ -33,6 +34,7 @@ import DetailsView from './components/DetailsView';
 import ConfirmModal from './components/ConfirmModal';
 import AnnouncementModal from './components/AnnouncementModal';
 import useAnnouncements from './hooks/useAnnouncements';
+import useChildMessages from './hooks/useChildMessages';
 import useDraftStorage from './hooks/useDraftStorage';
 
 
@@ -81,6 +83,22 @@ function App() {
     isSupabaseEnabled,
     supabase,
     defaultAnnouncements: DEFAULT_ANNOUNCEMENTS,
+  });
+  const {
+    messages: childMessages,
+    status: childMessagesStatus,
+    draft: messageDraft,
+    setDraft: setMessageDraft,
+    sendMessage,
+    isSending: isSendingMessage,
+    typingUsers: childTypingUsers,
+    broadcastTyping,
+  } = useChildMessages({
+    childId: selectedChild?.id,
+    isSupabaseEnabled,
+    supabase,
+    storageKey: MESSAGES_KEY,
+    defaultSender: selectedChild?.guardianName?.trim(),
   });
 
   React.useEffect(() => {
@@ -183,8 +201,7 @@ function App() {
       if (childrenWithUpdatedAges.length) {
         const seen = birthdayAlertsRef.current;
         childrenWithUpdatedAges.forEach((child) => {
-          if (child.dateOfBirth && isBirthdayToday(child.dateOfBirth, today) && !seen.has(child.id)) {
-            alert(`Happy birthday ${child.name}!`);
+          if (child.dateOfBirth && isBirthdayToday(child.dateOfBirth, today)) {
             seen.add(child.id);
           }
         });
@@ -232,8 +249,7 @@ function App() {
     }
     const seen = birthdayAlertsRef.current;
     updatedChildren.forEach((child) => {
-      if (child.dateOfBirth && isBirthdayToday(child.dateOfBirth, today) && !seen.has(child.id)) {
-        alert(`Happy birthday ${child.name}!`);
+      if (child.dateOfBirth && isBirthdayToday(child.dateOfBirth, today)) {
         seen.add(child.id);
       }
     });
@@ -428,25 +444,38 @@ function App() {
       return;
     }
 
+    let resolvedChild = updatedChild;
+
     if (isSupabaseEnabled) {
       setSupabaseStatus('');
       const { error: updateError } = await supabase
         .from('children')
         .update(mapChildToDb(updatedChild))
-  .eq('id', existingRecord.id);
+        .eq('id', existingRecord.id);
       if (updateError) {
         setError(`Unable to update child details. ${updateError.message}`);
         return;
       }
+
+      const { data: refreshedChild, error: refreshError } = await supabase
+        .from('children')
+        .select('*')
+        .eq('id', existingRecord.id)
+        .single();
+
+      if (!refreshError && refreshedChild) {
+        resolvedChild = mapChildFromDb(refreshedChild);
+      }
+
       setSupabaseStatus('Child details updated in Supabase.');
     } else {
       setSupabaseStatus('Child details updated.');
     }
 
     setChildren((prev) =>
-      prev.map((record) => (record.id === existingRecord.id ? updatedChild : record))
+      prev.map((record) => (record.id === existingRecord.id ? resolvedChild : record))
     );
-    setSelectedChild(updatedChild);
+    setSelectedChild(resolvedChild);
     setView('details');
   };
 
@@ -562,6 +591,9 @@ function App() {
   });
 
   const signedInChildren = children.filter((child) => child.lastStatus === 'sign_in');
+  const birthdayChildren = children.filter(
+    (child) => child.dateOfBirth && isBirthdayToday(child.dateOfBirth)
+  );
 
   return (
     <div
@@ -586,6 +618,7 @@ function App() {
             onCheckin={() => setView('checkin')}
             announcements={announcements}
             announcementsStatus={announcementsStatus}
+            birthdayChildren={birthdayChildren}
             onSelectAnnouncement={setSelectedAnnouncement}
             truncateMessage={truncateMessage}
           />
@@ -627,6 +660,7 @@ function App() {
               setSelectedChild(child);
               setView('details');
             }}
+            isBirthdayToday={isBirthdayToday}
           />
         )}
 
@@ -634,9 +668,19 @@ function App() {
           <DetailsView
             selectedChild={selectedChild}
             onBack={() => setView('checkin')}
+            onGoHome={() => setView('home')}
             onStartUpdate={() => handleStartUpdate(selectedChild)}
             requestSignIn={requestSignIn}
             requestSignOut={requestSignOut}
+            isBirthdayToday={isBirthdayToday}
+            messages={childMessages}
+            messagesStatus={childMessagesStatus}
+            messageDraft={messageDraft}
+            onMessageDraftChange={setMessageDraft}
+            onSendMessage={sendMessage}
+            isSendingMessage={isSendingMessage}
+            typingUsers={childTypingUsers}
+            onTyping={broadcastTyping}
           />
         )}
       </main>

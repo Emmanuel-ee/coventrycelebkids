@@ -294,6 +294,50 @@ button.ghost:hover {
   transform: translateY(-1px);
 }
 
+.list__item--featured {
+  border: 1px solid #7aa2ff;
+  background: linear-gradient(120deg, #eef4ff 0%, #ffffff 100%);
+  box-shadow: 0 12px 24px rgba(76, 111, 255, 0.15);
+}
+
+.list__item--birthday {
+  border: 1px solid #f59e0b;
+  background: linear-gradient(120deg, #fff4d6 0%, #ffffff 100%);
+  box-shadow: 0 12px 24px rgba(245, 158, 11, 0.18);
+}
+
+.card--birthday {
+  border: 1px solid #f59e0b;
+  background: linear-gradient(140deg, #fff7df 0%, #ffffff 100%);
+}
+
+.birthday-banner {
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #f59e0b;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.birthday-announcement {
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: linear-gradient(120deg, #fff0c2 0%, #ffe5f0 100%);
+  border: 1px solid #f97316;
+  color: #9a3412;
+  font-weight: 700;
+  box-shadow: 0 14px 26px rgba(249, 115, 22, 0.2);
+  text-align: center;
+  letter-spacing: 0.01em;
+}
+
+
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -345,6 +389,61 @@ button.ghost:hover {
 .button-column {
   display: grid;
   gap: 8px;
+}
+
+.divider {
+  height: 1px;
+  background: #e2e8f0;
+  margin: 20px 0;
+}
+
+.message-section {
+  display: grid;
+  gap: 12px;
+}
+
+.message-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.message-item {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #e4e7ec;
+  background: #f8fafc;
+  display: grid;
+  gap: 6px;
+}
+
+.message-item__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  color: #475467;
+}
+
+.message-item p {
+  margin: 0;
+  color: #1f2937;
+}
+
+.message-form {
+  display: grid;
+  gap: 12px;
+}
+
+.typing-indicator {
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: #eef2ff;
+  color: #1d2b53;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .filters {

@@ -6,6 +6,7 @@ const HomeView = ({
   onCheckin,
   announcements,
   announcementsStatus,
+  birthdayChildren,
   onSelectAnnouncement,
   truncateMessage,
 }) => (
@@ -34,12 +35,22 @@ const HomeView = ({
           <p className="card__subtitle">Updates for parents and guardians.</p>
         </div>
       </div>
+      {birthdayChildren.length > 0 && (
+        <div className="birthday-announcement">
+          {birthdayChildren.map((child, index) => (
+            <span key={child.id}>
+              🎉🎂 Today we celebrate {child.name}'s Birthday!
+              {index < birthdayChildren.length - 1 ? ' • ' : ''}
+            </span>
+          ))}
+        </div>
+      )}
       {announcementsStatus && <div className="empty">{announcementsStatus}</div>}
       <ul className="list">
-        {announcements.map((announcement) => (
+        {announcements.map((announcement, index) => (
           <li
             key={announcement.id}
-            className="list__item list__item--clickable"
+            className={`list__item list__item--clickable${index === 0 ? ' list__item--featured' : ''}`}
             onClick={() => onSelectAnnouncement(announcement)}
             role="button"
             tabIndex={0}

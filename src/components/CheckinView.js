@@ -8,6 +8,7 @@ const CheckinView = ({
   requestSignIn,
   requestSignOut,
   onSelectChild,
+  isBirthdayToday,
 }) => (
   <>
     <section className="card">
@@ -36,7 +37,14 @@ const CheckinView = ({
         ) : (
           <ul className="list">
             {filteredChildren.map((child) => (
-              <li key={child.id} className="list__item">
+              <li
+                key={child.id}
+                className={`list__item${
+                  child.dateOfBirth && isBirthdayToday(child.dateOfBirth)
+                    ? ' list__item--birthday'
+                    : ''
+                }`}
+              >
                 <div>
                   <h3>{child.name}</h3>
                   {child.classCategory && (
@@ -79,10 +87,14 @@ const CheckinView = ({
         <div className="empty">No children are signed in yet.</div>
       ) : (
         <ul className="list">
-          {signedInChildren.map((child) => (
+            {signedInChildren.map((child) => (
             <li
               key={child.id}
-              className="list__item list__item--clickable"
+                className={`list__item list__item--clickable${
+                  child.dateOfBirth && isBirthdayToday(child.dateOfBirth)
+                    ? ' list__item--birthday'
+                    : ''
+                }`}
               onClick={() => onSelectChild(child)}
               role="button"
               tabIndex={0}
