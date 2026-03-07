@@ -366,7 +366,7 @@ function App() {
         ]);
       if (checkinError) {
         setError(`Unable to ${action === 'sign_in' ? 'sign in' : 'sign out'}. ${checkinError.message}`);
-        return false;
+        return { success: false };
       }
       const { error: statusError } = await supabase
         .from('children')
@@ -374,7 +374,7 @@ function App() {
         .eq('id', child.id);
       if (statusError) {
         setError(`Signed ${action === 'sign_in' ? 'in' : 'out'}, but status update failed. ${statusError.message}`);
-        return false;
+        return { success: false };
       }
       setChildren((prev) =>
         prev.map((record) =>
@@ -410,7 +410,7 @@ function App() {
     setSupabaseStatus(
       `${child.name} ${action === 'sign_in' ? 'signed in' : 'signed out'} successfully.`
     );
-    return true;
+    return { success: true, timestamp };
   };
 
   const requestSignIn = (child) => {
@@ -426,9 +426,13 @@ function App() {
       return;
     }
     const { type, child } = confirmAction;
-    const success = await recordCheckin(child, type);
-    if (success && type === 'sign_in') {
-      setSelectedChild(child);
+    const result = await recordCheckin(child, type);
+    if (result.success && type === 'sign_in') {
+      setSelectedChild({
+        ...child,
+        lastStatus: type,
+        lastActionAt: result.timestamp,
+      });
       setView('details');
     }
     setConfirmAction(null);
