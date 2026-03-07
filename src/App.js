@@ -465,7 +465,6 @@ function App() {
               Coventry Celebkids
             </button>
           </h1>
-          <p className="app__subtitle">Register children and see who is already checked in.</p>
         </div>
         <div className="app__status">
           {!isSupabaseEnabled && (
