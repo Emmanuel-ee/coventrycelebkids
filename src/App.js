@@ -666,6 +666,11 @@ function App() {
             </button>
             <p className="app__eyebrow">In Christ For Christ With Joy</p>
           </h1>
+          {view === 'checkin' && (
+            <button className="ghost" type="button" onClick={() => setView('home')}>
+              Home
+            </button>
+          )}
         </div>
         <div className="app__status">
           {!isSupabaseEnabled && (
@@ -984,9 +989,6 @@ function App() {
                     Search by name and sign in at drop-off.
                   </p>
                 </div>
-                <button className="ghost" type="button" onClick={() => setView('home')}>
-                  Home
-                </button>
               </div>
               <div className="form">
                 <label>
