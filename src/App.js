@@ -132,6 +132,19 @@ const mapChildToDb = (child) => ({
   created_at: child.createdAt,
 });
 
+const getLatestCheckinsByChild = (checkinList) =>
+  checkinList.reduce((accumulator, checkin) => {
+    const childId = checkin.childId || checkin.child_id;
+    if (!childId || accumulator[childId]) {
+      return accumulator;
+    }
+    accumulator[childId] = {
+      action: checkin.action,
+      createdAt: checkin.createdAt || checkin.created_at || '',
+    };
+    return accumulator;
+  }, {});
+
 function App() {
   const [children, setChildren] = React.useState(() =>
     isSupabaseEnabled ? [] : loadLocalChildren()
@@ -227,7 +240,40 @@ function App() {
         return;
       }
 
-      setChildren((data || []).map(mapChildFromDb));
+      const mappedChildren = (data || []).map(mapChildFromDb);
+      const { data: checkinData, error: checkinError } = await supabase
+        .from('checkins')
+        .select('child_id, action, created_at')
+        .order('created_at', { ascending: false });
+
+      if (checkinError) {
+        setChildren(mappedChildren);
+        setIsLoading(false);
+        return;
+      }
+
+      const latestCheckins = getLatestCheckinsByChild(checkinData || []);
+      const mergedChildren = mappedChildren.map((child) => {
+        const latest = latestCheckins[child.id];
+        if (!latest) {
+          return child;
+        }
+        return {
+          ...child,
+          lastStatus: latest.action,
+          lastActionAt: latest.createdAt,
+        };
+      });
+
+      setCheckins(
+        (checkinData || []).map((checkin) => ({
+          id: checkin.id,
+          childId: checkin.child_id,
+          action: checkin.action,
+          createdAt: checkin.created_at,
+        }))
+      );
+      setChildren(mergedChildren);
       setIsLoading(false);
     };
 
