@@ -529,8 +529,8 @@ function App() {
     setView('details');
   };
 
-  const recordCheckin = async (child, action) => {
-    const timestamp = new Date().toISOString();
+  const recordCheckin = async (child, action, timestamp) => {
+    const actionTimestamp = timestamp || new Date().toISOString();
 
     if (isSupabaseEnabled) {
       const { error: checkinError } = await supabase
@@ -540,7 +540,7 @@ function App() {
             id: createId(),
             child_id: child.id,
             action,
-            created_at: timestamp,
+            created_at: actionTimestamp,
           },
         ]);
       if (checkinError) {
@@ -549,7 +549,7 @@ function App() {
       }
       const { error: statusError } = await supabase
         .from('children')
-        .update({ last_status: action, last_action_at: timestamp })
+  .update({ last_status: action, last_action_at: actionTimestamp })
         .eq('id', child.id);
       if (statusError) {
         setError(`Signed ${action === 'sign_in' ? 'in' : 'out'}, but status update failed. ${statusError.message}`);
@@ -558,30 +558,30 @@ function App() {
       setChildren((prev) =>
         prev.map((record) =>
           record.id === child.id
-            ? { ...record, lastStatus: action, lastActionAt: timestamp }
+            ? { ...record, lastStatus: action, lastActionAt: actionTimestamp }
             : record
         )
       );
       setSelectedChild((prev) =>
         prev && prev.id === child.id
-          ? { ...prev, lastStatus: action, lastActionAt: timestamp }
+          ? { ...prev, lastStatus: action, lastActionAt: actionTimestamp }
           : prev
       );
     } else {
       setCheckins((prev) => [
-        { id: createId(), childId: child.id, action, createdAt: timestamp },
+        { id: createId(), childId: child.id, action, createdAt: actionTimestamp },
         ...prev,
       ]);
       setChildren((prev) =>
         prev.map((record) =>
           record.id === child.id
-            ? { ...record, lastStatus: action, lastActionAt: timestamp }
+            ? { ...record, lastStatus: action, lastActionAt: actionTimestamp }
             : record
         )
       );
       setSelectedChild((prev) =>
         prev && prev.id === child.id
-          ? { ...prev, lastStatus: action, lastActionAt: timestamp }
+          ? { ...prev, lastStatus: action, lastActionAt: actionTimestamp }
           : prev
       );
     }
@@ -589,23 +589,23 @@ function App() {
     setSupabaseStatus(
       `${child.name} ${action === 'sign_in' ? 'signed in' : 'signed out'} successfully.`
     );
-    return { success: true, timestamp };
+    return { success: true, timestamp: actionTimestamp };
   };
 
   const requestSignIn = (child) => {
-    setConfirmAction({ type: 'sign_in', child });
+    setConfirmAction({ type: 'sign_in', child, timestamp: new Date().toISOString() });
   };
 
   const requestSignOut = (child) => {
-    setConfirmAction({ type: 'sign_out', child });
+    setConfirmAction({ type: 'sign_out', child, timestamp: new Date().toISOString() });
   };
 
   const handleConfirmAction = async () => {
     if (!confirmAction) {
       return;
     }
-    const { type, child } = confirmAction;
-    const result = await recordCheckin(child, type);
+  const { type, child, timestamp } = confirmAction;
+  const result = await recordCheckin(child, type, timestamp);
     if (result.success && type === 'sign_in') {
       setSelectedChild({
         ...child,
@@ -984,6 +984,9 @@ function App() {
                     Search by name and sign in at drop-off.
                   </p>
                 </div>
+                <button className="ghost" type="button" onClick={() => setView('home')}>
+                  Home
+                </button>
               </div>
               <div className="form">
                 <label>
