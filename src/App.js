@@ -57,6 +57,7 @@ function App() {
   const [pendingScanId, setPendingScanId] = React.useState('');
   const [isScannerActive, setIsScannerActive] = React.useState(false);
   const [scanNotice, setScanNotice] = React.useState('');
+  const [signedInChildId, setSignedInChildId] = React.useState('');
   const birthdayAlertsRef = React.useRef(new Set());
   const lastScanRef = React.useRef({ value: '', timestamp: 0 });
   const [selectedAnnouncement, setSelectedAnnouncement] = React.useState(null);
@@ -297,6 +298,18 @@ function App() {
       }
     });
   }, [children]);
+
+  React.useEffect(() => {
+    if (!signedInChildId) {
+      return;
+    }
+    const stillSignedIn = children.some(
+      (child) => child.id === signedInChildId && child.lastStatus === 'sign_in'
+    );
+    if (!stillSignedIn) {
+      setSignedInChildId('');
+    }
+  }, [children, signedInChildId]);
 
   const handleChildChange = (event) => {
     const { name, value, type, checked } = event.target;
@@ -638,6 +651,12 @@ function App() {
       const result = await recordCheckin(child, action);
       if (result.success) {
         setView('details');
+        if (action === 'sign_in') {
+          setSignedInChildId(child.id);
+        }
+        if (action === 'sign_out' && signedInChildId === child.id) {
+          setSignedInChildId('');
+        }
       }
       const url = new URL(window.location.href);
       url.searchParams.delete('scan');
@@ -669,6 +688,7 @@ function App() {
         lastActionAt: result.timestamp,
       });
       setView('details');
+      setSignedInChildId(child.id);
     }
     if (result.success && type === 'sign_out') {
       setSelectedChild((prev) =>
@@ -677,6 +697,9 @@ function App() {
           : prev
       );
       setView('home');
+      if (signedInChildId === child.id) {
+        setSignedInChildId('');
+      }
     }
     setConfirmAction(null);
   };
@@ -747,6 +770,9 @@ function App() {
   });
 
   const signedInChildren = children.filter((child) => child.lastStatus === 'sign_in');
+  const scopedSignedInChildren = signedInChildId
+    ? signedInChildren.filter((child) => child.id === signedInChildId)
+    : [];
   const birthdayChildren = children.filter(
     (child) => child.dateOfBirth && isBirthdayToday(child.dateOfBirth)
   );
@@ -814,7 +840,7 @@ function App() {
             searchTerm={searchTerm}
             onSearchChange={(event) => setSearchTerm(event.target.value)}
             filteredChildren={filteredChildren}
-            signedInChildren={signedInChildren}
+            signedInChildren={scopedSignedInChildren}
             requestSignIn={requestSignIn}
             requestSignOut={requestSignOut}
             onSelectChild={(child) => {
