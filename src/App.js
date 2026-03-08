@@ -62,7 +62,7 @@ function App() {
     () => localStorage.getItem(SIGNED_IN_CHILD_KEY) || ''
   );
   const [authUserId, setAuthUserId] = React.useState('');
-  const [authNotice, setAuthNotice] = React.useState('');
+  const isStartingAuthRef = React.useRef(false);
   const birthdayAlertsRef = React.useRef(new Set());
   const lastScanRef = React.useRef({ value: '', timestamp: 0 });
   const [selectedAnnouncement, setSelectedAnnouncement] = React.useState(null);
@@ -125,10 +125,22 @@ function App() {
         return;
       }
       if (sessionError) {
-        setAuthNotice('Unable to load secure session. Please try again.');
+        setError('Unable to load secure session. Please try again.');
         return;
       }
-      setAuthUserId(data?.session?.user?.id || '');
+      const nextUserId = data?.session?.user?.id || '';
+      setAuthUserId(nextUserId);
+      if (!nextUserId && !isStartingAuthRef.current) {
+        isStartingAuthRef.current = true;
+        const { error: signInError } = await supabase.auth.signInAnonymously();
+        if (!isActive) {
+          return;
+        }
+        if (signInError) {
+          setError(`Unable to start secure session. ${signInError.message}`);
+        }
+        isStartingAuthRef.current = false;
+      }
     };
 
     loadSession();
@@ -145,17 +157,6 @@ function App() {
       subscription?.subscription?.unsubscribe();
     };
   }, []);
-
-  const handleStartSession = async () => {
-    if (!isSupabaseEnabled) {
-      return;
-    }
-    setAuthNotice('');
-    const { error: signInError } = await supabase.auth.signInAnonymously();
-    if (signInError) {
-      setAuthNotice(`Unable to start secure session. ${signInError.message}`);
-    }
-  };
 
   const isValidGuardianContact = React.useCallback((value) => {
     if (!value) {
@@ -971,37 +972,24 @@ function App() {
         )}
 
         {view === 'checkin' && (
-          authUserId || !isSupabaseEnabled ? (
-            <CheckinView
-              searchTerm={searchTerm}
-              onSearchChange={(event) => setSearchTerm(event.target.value)}
-              filteredChildren={filteredChildren}
-              signedInChildren={scopedSignedInChildren}
-              requestSignIn={requestSignIn}
-              requestSignOut={requestSignOut}
-              onSelectChild={(child) => {
-                setSelectedChild(child);
-                setView('details');
-              }}
-              isBirthdayToday={isBirthdayToday}
-              isScannerActive={isScannerActive}
-              onToggleScanner={handleScannerToggle}
-              scanNotice={scanNotice}
-              onScan={handleScanResult}
-              onScanError={handleScannerError}
-            />
-          ) : (
-            <section className="card card--center">
-              <h2>Start a secure session</h2>
-              <p className="card__subtitle">
-                This keeps child details private on each device.
-              </p>
-              {authNotice && <div className="status status--error">{authNotice}</div>}
-              <button type="button" onClick={handleStartSession}>
-                Start secure session
-              </button>
-            </section>
-          )
+          <CheckinView
+            searchTerm={searchTerm}
+            onSearchChange={(event) => setSearchTerm(event.target.value)}
+            filteredChildren={filteredChildren}
+            signedInChildren={scopedSignedInChildren}
+            requestSignIn={requestSignIn}
+            requestSignOut={requestSignOut}
+            onSelectChild={(child) => {
+              setSelectedChild(child);
+              setView('details');
+            }}
+            isBirthdayToday={isBirthdayToday}
+            isScannerActive={isScannerActive}
+            onToggleScanner={handleScannerToggle}
+            scanNotice={scanNotice}
+            onScan={handleScanResult}
+            onScanError={handleScannerError}
+          />
         )}
 
         {view === 'details' && selectedChild && canViewDetails && (
