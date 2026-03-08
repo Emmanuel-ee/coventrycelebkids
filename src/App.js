@@ -108,6 +108,23 @@ function App() {
     defaultSender: selectedChild?.guardianName?.trim(),
   });
 
+  const isValidGuardianContact = React.useCallback((value) => {
+    if (!value) {
+      return false;
+    }
+    const trimmed = value.trim();
+    const normalized = trimmed.replace(/[\s().-]/g, '');
+    const hasPlus = normalized.startsWith('+');
+    const digits = hasPlus ? normalized.slice(1) : normalized;
+    if (!/^[0-9]+$/.test(digits)) {
+      return false;
+    }
+    if (hasPlus) {
+      return digits.length > 11;
+    }
+    return digits.length === 11;
+  }, []);
+
   React.useEffect(() => {
     if (!isSupabaseEnabled) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(children));
@@ -316,8 +333,13 @@ function App() {
       setError("Please select the child's sex.");
       return;
     }
-    if (!childForm.guardianContact.trim()) {
-      setError("Guardian contact is required.");
+    const guardianContact = childForm.guardianContact.trim();
+    if (!guardianContact) {
+      setError('Guardian contact is required.');
+      return;
+    }
+    if (!isValidGuardianContact(guardianContact)) {
+      setError('Guardian contact must be 11 digits, or use a + prefix for longer numbers.');
       return;
     }
     if (childForm.sex === 'Other' && !childForm.sexOther.trim()) {
@@ -428,8 +450,13 @@ function App() {
       setError("Please select the child's sex.");
       return;
     }
-    if (!updateForm.guardianContact.trim()) {
+    const guardianContact = updateForm.guardianContact.trim();
+    if (!guardianContact) {
       setError('Guardian contact is required.');
+      return;
+    }
+    if (!isValidGuardianContact(guardianContact)) {
+      setError('Guardian contact must be 11 digits, or use a + prefix for longer numbers.');
       return;
     }
     if (updateForm.sex === 'Other' && !updateForm.sexOther.trim()) {

@@ -111,14 +111,25 @@ const RegisterForm = ({
           />
         </label>
       )}
-      <label className="checkbox">
-        <input
-          type="checkbox"
+      <label>
+        Would you want your child's picture taken?
+        <select
           name="allowPhotos"
-          checked={childForm.allowPhotos}
-          onChange={onChange}
-        />
-        Would you want your child's picture captured?
+          value={childForm.allowPhotos ? 'yes' : 'no'}
+          onChange={(event) =>
+            onChange({
+              ...event,
+              target: {
+                ...event.target,
+                type: 'checkbox',
+                checked: event.target.value === 'yes',
+              },
+            })
+          }
+        >
+          <option value="yes">Yes</option>
+          <option value="no">No</option>
+        </select>
       </label>
       <label>
         Notes
