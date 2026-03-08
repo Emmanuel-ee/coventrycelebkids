@@ -118,9 +118,8 @@ const RegisterForm = ({
           value={childForm.allowPhotos ? 'yes' : 'no'}
           onChange={(event) =>
             onChange({
-              ...event,
               target: {
-                ...event.target,
+                name: 'allowPhotos',
                 type: 'checkbox',
                 checked: event.target.value === 'yes',
               },
