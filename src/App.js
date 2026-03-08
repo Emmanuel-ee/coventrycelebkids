@@ -144,116 +144,110 @@ function App() {
     }
   }, []);
 
+  const fetchChildren = React.useCallback(async () => {
+    if (!isSupabaseEnabled) {
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+    setSupabaseStatus('');
+    const { data, error: fetchError } = await supabase
+      .from('children')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (fetchError) {
+      setError(`Unable to load children from Supabase. ${fetchError.message}`);
+      setIsLoading(false);
+      return;
+    }
+
+    const mappedChildren = (data || []).map(mapChildFromDb);
+    const { data: checkinData, error: checkinError } = await supabase
+      .from('checkins')
+      .select('child_id, action, created_at')
+      .order('created_at', { ascending: false });
+
+    if (checkinError) {
+      setChildren(mappedChildren);
+      setIsLoading(false);
+      return;
+    }
+
+    const latestCheckins = getLatestCheckinsByChild(checkinData || []);
+    const mergedChildren = mappedChildren.map((child) => {
+      const latest = latestCheckins[child.id];
+      if (!latest) {
+        return child;
+      }
+      return {
+        ...child,
+        lastStatus: latest.action,
+        lastActionAt: latest.createdAt,
+      };
+    });
+
+    setCheckins(
+      (checkinData || []).map((checkin) => ({
+        id: checkin.id,
+        childId: checkin.child_id,
+        action: checkin.action,
+        createdAt: checkin.created_at,
+      }))
+    );
+    const today = new Date();
+    const childrenWithUpdatedAges = mergedChildren.map((child) => {
+      const derivedAge = getAgeFromDob(child.dateOfBirth);
+      if (derivedAge && derivedAge !== child.age) {
+        return { ...child, age: derivedAge };
+      }
+      return child;
+    });
+
+    const childrenWithQrCodes = childrenWithUpdatedAges.map((child) =>
+      child.qrCode ? child : { ...child, qrCode: createId() }
+    );
+
+    setChildren(childrenWithQrCodes);
+    setIsLoading(false);
+
+    if (childrenWithUpdatedAges.length) {
+      const seen = birthdayAlertsRef.current;
+      childrenWithUpdatedAges.forEach((child) => {
+        if (child.dateOfBirth && isBirthdayToday(child.dateOfBirth, today)) {
+          seen.add(child.id);
+        }
+      });
+    }
+
+    const updates = childrenWithQrCodes.filter((child, index) => {
+      const previous = mergedChildren[index];
+      return child.age !== previous.age || child.qrCode !== previous.qrCode;
+    });
+    if (updates.length) {
+      await Promise.all(
+        updates.map((child) =>
+          supabase
+            .from('children')
+            .update({
+              age: child.age || null,
+              qr_code: child.qrCode || null,
+            })
+            .eq('id', child.id)
+        )
+      );
+    }
+  }, [isSupabaseEnabled, supabase]);
+
   React.useEffect(() => {
     if (!isSupabaseEnabled) {
       return undefined;
     }
 
-    let isActive = true;
-
-    const fetchChildren = async () => {
-      setIsLoading(true);
-      setError('');
-      setSupabaseStatus('');
-      const { data, error: fetchError } = await supabase
-        .from('children')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (!isActive) {
-        return;
-      }
-
-      if (fetchError) {
-        setError(`Unable to load children from Supabase. ${fetchError.message}`);
-        setIsLoading(false);
-        return;
-      }
-
-      const mappedChildren = (data || []).map(mapChildFromDb);
-      const { data: checkinData, error: checkinError } = await supabase
-        .from('checkins')
-        .select('child_id, action, created_at')
-        .order('created_at', { ascending: false });
-
-      if (checkinError) {
-        setChildren(mappedChildren);
-        setIsLoading(false);
-        return;
-      }
-
-      const latestCheckins = getLatestCheckinsByChild(checkinData || []);
-      const mergedChildren = mappedChildren.map((child) => {
-        const latest = latestCheckins[child.id];
-        if (!latest) {
-          return child;
-        }
-        return {
-          ...child,
-          lastStatus: latest.action,
-          lastActionAt: latest.createdAt,
-        };
-      });
-
-      setCheckins(
-        (checkinData || []).map((checkin) => ({
-          id: checkin.id,
-          childId: checkin.child_id,
-          action: checkin.action,
-          createdAt: checkin.created_at,
-        }))
-      );
-      const today = new Date();
-      const childrenWithUpdatedAges = mergedChildren.map((child) => {
-        const derivedAge = getAgeFromDob(child.dateOfBirth);
-        if (derivedAge && derivedAge !== child.age) {
-          return { ...child, age: derivedAge };
-        }
-        return child;
-      });
-
-      const childrenWithQrCodes = childrenWithUpdatedAges.map((child) =>
-        child.qrCode ? child : { ...child, qrCode: createId() }
-      );
-
-      setChildren(childrenWithQrCodes);
-      setIsLoading(false);
-
-      if (childrenWithUpdatedAges.length) {
-        const seen = birthdayAlertsRef.current;
-        childrenWithUpdatedAges.forEach((child) => {
-          if (child.dateOfBirth && isBirthdayToday(child.dateOfBirth, today)) {
-            seen.add(child.id);
-          }
-        });
-      }
-
-      const updates = childrenWithQrCodes.filter((child, index) => {
-        const previous = mergedChildren[index];
-        return child.age !== previous.age || child.qrCode !== previous.qrCode;
-      });
-      if (isSupabaseEnabled && updates.length) {
-        await Promise.all(
-          updates.map((child) =>
-            supabase
-              .from('children')
-              .update({
-                age: child.age || null,
-                qr_code: child.qrCode || null,
-              })
-              .eq('id', child.id)
-          )
-        );
-      }
-
-    };
-
     fetchChildren();
-
-    return () => {
-      isActive = false;
-    };
-  }, []);
+    return undefined;
+  }, [fetchChildren, isSupabaseEnabled]);
 
   React.useEffect(() => {
     if (isSupabaseEnabled || children.length === 0) {
@@ -503,8 +497,18 @@ function App() {
           setUpdateNotice('');
           return;
         }
-        resolvedChild = mapChildFromDb(updatedRows[0]);
-        setSupabaseStatus('Child details updated in Supabase.');
+        resolvedChild = {
+          ...existingRecord,
+          ...mapChildFromDb(updatedRows[0]),
+        };
+        resolvedChild = {
+          ...resolvedChild,
+          lastStatus: resolvedChild.lastStatus || existingRecord.lastStatus,
+          lastActionAt: resolvedChild.lastActionAt || existingRecord.lastActionAt,
+          qrCode: resolvedChild.qrCode || existingRecord.qrCode,
+        };
+  setSupabaseStatus('Child details updated in Supabase.');
+  await fetchChildren();
       } else {
         setSupabaseStatus('Child details updated.');
       }
