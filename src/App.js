@@ -7,6 +7,7 @@ import {
   DEFAULT_ANNOUNCEMENTS,
   KNOWN_ALLERGIES,
   MESSAGES_KEY,
+  SIGNED_IN_CHILD_KEY,
   STORAGE_KEY,
 } from './constants';
 import {
@@ -57,7 +58,9 @@ function App() {
   const [pendingScanId, setPendingScanId] = React.useState('');
   const [isScannerActive, setIsScannerActive] = React.useState(false);
   const [scanNotice, setScanNotice] = React.useState('');
-  const [signedInChildId, setSignedInChildId] = React.useState('');
+  const [signedInChildId, setSignedInChildId] = React.useState(
+    () => localStorage.getItem(SIGNED_IN_CHILD_KEY) || ''
+  );
   const birthdayAlertsRef = React.useRef(new Set());
   const lastScanRef = React.useRef({ value: '', timestamp: 0 });
   const [selectedAnnouncement, setSelectedAnnouncement] = React.useState(null);
@@ -130,7 +133,15 @@ function App() {
     if (!isSupabaseEnabled) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(children));
     }
-  }, [children]);
+  }, [children, signedInChildId]);
+
+  React.useEffect(() => {
+    if (signedInChildId) {
+      localStorage.setItem(SIGNED_IN_CHILD_KEY, signedInChildId);
+    } else {
+      localStorage.removeItem(SIGNED_IN_CHILD_KEY);
+    }
+  }, [signedInChildId]);
 
   React.useEffect(() => {
     if (!isSupabaseEnabled) {
@@ -665,7 +676,7 @@ function App() {
     };
 
     handleScan();
-  }, [pendingScanId, children, recordCheckin]);
+  }, [pendingScanId, children, recordCheckin, signedInChildId]);
 
   const requestSignIn = (child) => {
     setConfirmAction({ type: 'sign_in', child, timestamp: new Date().toISOString() });

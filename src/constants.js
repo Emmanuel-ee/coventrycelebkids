@@ -2,6 +2,7 @@ export const STORAGE_KEY = 'celebkids-children-v1';
 export const DRAFT_KEY = 'celebkids-child-draft-v1';
 export const CHECKIN_KEY = 'celebkids-checkins-v1';
 export const MESSAGES_KEY = 'celebkids-messages-v1';
+export const SIGNED_IN_CHILD_KEY = 'celebkids-signed-in-child-v1';
 
 export const KNOWN_ALLERGIES = [
   'None',
