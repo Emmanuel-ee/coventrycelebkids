@@ -775,6 +775,9 @@ function App() {
     if (!term) {
       return false;
     }
+    if (child.lastStatus === 'sign_in' && child.id !== signedInChildId) {
+      return false;
+    }
     return [child.name]
       .filter(Boolean)
       .some((value) => value.toLowerCase().includes(term));
