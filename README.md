@@ -43,6 +43,7 @@ REACT_APP_SUPABASE_ANON_KEY=your-anon-key
 | class_category | text | TenderFoot, Lighttroopers, Tribe of Truth |
 | last_status | text | sign_in or sign_out |
 | last_action_at | timestamptz | Last sign in/out time |
+| signed_in | boolean | True when currently signed in |
 | allow_photos | boolean | Photo consent |
 | notes | text | Optional notes |
 | created_at | timestamptz | Defaults to now() |
@@ -88,6 +89,7 @@ alter table public.children
 	add column if not exists class_category text,
 	add column if not exists last_status text,
 	add column if not exists last_action_at timestamptz,
+	add column if not exists signed_in boolean default false,
 	add column if not exists qr_code text,
 	add column if not exists allow_photos boolean default false;
 	add column if not exists notes text;

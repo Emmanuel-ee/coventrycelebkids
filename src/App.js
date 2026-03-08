@@ -210,11 +210,12 @@ function App() {
       if (!latest) {
         return child;
       }
-      return {
-        ...child,
-        lastStatus: latest.action,
-        lastActionAt: latest.createdAt,
-      };
+        return {
+          ...child,
+          lastStatus: latest.action,
+          lastActionAt: latest.createdAt,
+          signedIn: latest.action === 'sign_in',
+        };
     });
 
     setCheckins(
@@ -513,6 +514,7 @@ function App() {
       classCategory: derivedClassCategory,
       allowPhotos: updateForm.allowPhotos,
       notes: updateForm.notes.trim(),
+      signedIn: existingRecord.lastStatus === 'sign_in',
     };
 
     const hasChanges = Object.keys(updatedChild).some(
@@ -557,6 +559,10 @@ function App() {
           lastStatus: resolvedChild.lastStatus || existingRecord.lastStatus,
           lastActionAt: resolvedChild.lastActionAt || existingRecord.lastActionAt,
           qrCode: resolvedChild.qrCode || existingRecord.qrCode,
+          signedIn:
+            typeof resolvedChild.signedIn === 'boolean'
+              ? resolvedChild.signedIn
+              : existingRecord.lastStatus === 'sign_in',
         };
   setSupabaseStatus('Child details updated in Supabase.');
   await fetchChildren();
@@ -597,7 +603,11 @@ function App() {
       }
       const { error: statusError } = await supabase
         .from('children')
-        .update({ last_status: action, last_action_at: actionTimestamp })
+        .update({
+          last_status: action,
+          last_action_at: actionTimestamp,
+          signed_in: action === 'sign_in',
+        })
         .eq('id', child.id);
       if (statusError) {
         setError(`Signed ${action === 'sign_in' ? 'in' : 'out'}, but status update failed. ${statusError.message}`);
@@ -606,13 +616,23 @@ function App() {
       setChildren((prev) =>
         prev.map((record) =>
           record.id === child.id
-            ? { ...record, lastStatus: action, lastActionAt: actionTimestamp }
+            ? {
+              ...record,
+              lastStatus: action,
+              lastActionAt: actionTimestamp,
+              signedIn: action === 'sign_in',
+            }
             : record
         )
       );
       setSelectedChild((prev) =>
         prev && prev.id === child.id
-          ? { ...prev, lastStatus: action, lastActionAt: actionTimestamp }
+          ? {
+            ...prev,
+            lastStatus: action,
+            lastActionAt: actionTimestamp,
+            signedIn: action === 'sign_in',
+          }
           : prev
       );
     } else {
@@ -623,13 +643,23 @@ function App() {
       setChildren((prev) =>
         prev.map((record) =>
           record.id === child.id
-            ? { ...record, lastStatus: action, lastActionAt: actionTimestamp }
+            ? {
+              ...record,
+              lastStatus: action,
+              lastActionAt: actionTimestamp,
+              signedIn: action === 'sign_in',
+            }
             : record
         )
       );
       setSelectedChild((prev) =>
         prev && prev.id === child.id
-          ? { ...prev, lastStatus: action, lastActionAt: actionTimestamp }
+          ? {
+            ...prev,
+            lastStatus: action,
+            lastActionAt: actionTimestamp,
+            signedIn: action === 'sign_in',
+          }
           : prev
       );
     }
@@ -783,10 +813,15 @@ function App() {
       .some((value) => value.toLowerCase().includes(term));
   });
 
-  const signedInChildren = children.filter((child) => child.lastStatus === 'sign_in');
+  const signedInChildren = children.filter(
+    (child) => child.signedIn || child.lastStatus === 'sign_in'
+  );
   const scopedSignedInChildren = signedInChildId
     ? signedInChildren.filter((child) => child.id === signedInChildId)
     : [];
+  const canViewDetails =
+    selectedChild
+    && (selectedChild.lastStatus !== 'sign_in' || selectedChild.id === signedInChildId);
   const birthdayChildren = children.filter(
     (child) => child.dateOfBirth && isBirthdayToday(child.dateOfBirth)
   );
@@ -870,7 +905,7 @@ function App() {
           />
         )}
 
-        {view === 'details' && selectedChild && (
+        {view === 'details' && selectedChild && canViewDetails && (
           <DetailsView
             selectedChild={selectedChild}
             onBack={() => setView('checkin')}
@@ -890,6 +925,17 @@ function App() {
             onArchiveMessage={archiveMessage}
             qrCodeValue={qrCodeValue}
           />
+        )}
+        {view === 'details' && selectedChild && !canViewDetails && (
+          <section className="card card--center">
+            <h2>Private child details</h2>
+            <p className="card__subtitle">
+              This child is signed in on another device. Ask the parent to sign out from that device.
+            </p>
+            <button type="button" onClick={() => setView('checkin')}>
+              Back to check-in
+            </button>
+          </section>
         )}
       </main>
       <ConfirmModal
