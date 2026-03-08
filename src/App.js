@@ -916,6 +916,15 @@ function App() {
     ? `${window.location.origin}${process.env.PUBLIC_URL || ''}/?scan=${selectedChild.qrCode || selectedChild.id}`
     : '';
 
+  React.useEffect(() => {
+    if (view !== 'details' || !selectedChild) {
+      return;
+    }
+    if (!canViewDetails) {
+      setView('checkin');
+    }
+  }, [canViewDetails, selectedChild, view]);
+
   return (
     <div
       className="app"
@@ -1012,17 +1021,6 @@ function App() {
             onArchiveMessage={archiveMessage}
             qrCodeValue={qrCodeValue}
           />
-        )}
-        {view === 'details' && selectedChild && !canViewDetails && (
-          <section className="card card--center">
-            <h2>Private child details</h2>
-            <p className="card__subtitle">
-              This child is signed in on another session. Ask the parent to sign out from that session.
-            </p>
-            <button type="button" onClick={() => setView('checkin')}>
-              Back to check-in
-            </button>
-          </section>
         )}
       </main>
       <ConfirmModal
