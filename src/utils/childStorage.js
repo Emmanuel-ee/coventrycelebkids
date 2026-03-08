@@ -45,6 +45,7 @@ const mapChildFromDb = (child) => ({
       : typeof child.signedIn === 'boolean'
         ? child.signedIn
         : child.last_status === 'sign_in' || child.lastStatus === 'sign_in',
+  signedInUserId: child.signed_in_user_id || child.signedInUserId || '',
   allowPhotos:
     typeof child.allow_photos === 'boolean'
       ? child.allow_photos
@@ -67,6 +68,7 @@ const mapChildToDb = (child) => ({
   last_status: child.lastStatus || null,
   last_action_at: child.lastActionAt || null,
   signed_in: typeof child.signedIn === 'boolean' ? child.signedIn : null,
+  signed_in_user_id: child.signedInUserId || null,
   allow_photos: Boolean(child.allowPhotos),
   notes: child.notes || null,
   created_at: child.createdAt,

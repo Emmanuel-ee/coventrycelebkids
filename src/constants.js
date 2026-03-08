@@ -1,3 +1,4 @@
+// LocalStorage fallback keys (offline cache + form drafts).
 export const STORAGE_KEY = 'celebkids-children-v1';
 export const DRAFT_KEY = 'celebkids-child-draft-v1';
 export const CHECKIN_KEY = 'celebkids-checkins-v1';

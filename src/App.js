@@ -61,6 +61,8 @@ function App() {
   const [signedInChildId, setSignedInChildId] = React.useState(
     () => localStorage.getItem(SIGNED_IN_CHILD_KEY) || ''
   );
+  const [authUserId, setAuthUserId] = React.useState('');
+  const [authNotice, setAuthNotice] = React.useState('');
   const birthdayAlertsRef = React.useRef(new Set());
   const lastScanRef = React.useRef({ value: '', timestamp: 0 });
   const [selectedAnnouncement, setSelectedAnnouncement] = React.useState(null);
@@ -112,6 +114,49 @@ function App() {
     defaultSender: selectedChild?.guardianName?.trim(),
   });
 
+  React.useEffect(() => {
+    if (!isSupabaseEnabled) {
+      return undefined;
+    }
+    let isActive = true;
+    const loadSession = async () => {
+      const { data, error: sessionError } = await supabase.auth.getSession();
+      if (!isActive) {
+        return;
+      }
+      if (sessionError) {
+        setAuthNotice('Unable to load secure session. Please try again.');
+        return;
+      }
+      setAuthUserId(data?.session?.user?.id || '');
+    };
+
+    loadSession();
+
+    const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!isActive) {
+        return;
+      }
+      setAuthUserId(session?.user?.id || '');
+    });
+
+    return () => {
+      isActive = false;
+      subscription?.subscription?.unsubscribe();
+    };
+  }, [isSupabaseEnabled, supabase]);
+
+  const handleStartSession = async () => {
+    if (!isSupabaseEnabled) {
+      return;
+    }
+    setAuthNotice('');
+    const { error: signInError } = await supabase.auth.signInAnonymously();
+    if (signInError) {
+      setAuthNotice(`Unable to start secure session. ${signInError.message}`);
+    }
+  };
+
   const isValidGuardianContact = React.useCallback((value) => {
     if (!value) {
       return false;
@@ -127,13 +172,13 @@ function App() {
       return digits.length > 11;
     }
     return digits.length === 11;
-  }, []);
+  }, [authUserId, isSupabaseEnabled, supabase]);
 
   React.useEffect(() => {
     if (!isSupabaseEnabled) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(children));
     }
-  }, [children, signedInChildId]);
+  }, [children]);
 
   React.useEffect(() => {
     if (signedInChildId) {
@@ -171,7 +216,7 @@ function App() {
     if (scanId) {
       setPendingScanId(scanId);
     }
-  }, []);
+  }, [authUserId, isSupabaseEnabled, supabase]);
 
   const fetchChildren = React.useCallback(async () => {
     if (!isSupabaseEnabled) {
@@ -239,6 +284,16 @@ function App() {
       child.qrCode ? child : { ...child, qrCode: createId() }
     );
 
+    if (authUserId) {
+      const matchingChild = childrenWithQrCodes.find(
+        (child) => child.signedIn && child.signedInUserId === authUserId
+      );
+      if (matchingChild) {
+        setSignedInChildId(matchingChild.id);
+      } else {
+        setSignedInChildId('');
+      }
+    }
     setChildren(childrenWithQrCodes);
     setIsLoading(false);
 
@@ -315,13 +370,25 @@ function App() {
     if (!signedInChildId) {
       return;
     }
-    const stillSignedIn = children.some(
-      (child) => child.id === signedInChildId && child.lastStatus === 'sign_in'
-    );
+    const stillSignedIn = children.some((child) => {
+      if (child.id !== signedInChildId || child.lastStatus !== 'sign_in') {
+        return false;
+      }
+      if (!isSupabaseEnabled) {
+        return true;
+      }
+      return child.signedInUserId === authUserId;
+    });
     if (!stillSignedIn) {
       setSignedInChildId('');
     }
-  }, [children, signedInChildId]);
+  }, [authUserId, children, isSupabaseEnabled, signedInChildId]);
+
+  React.useEffect(() => {
+    if (isSupabaseEnabled && !authUserId) {
+      setSignedInChildId('');
+    }
+  }, [authUserId, isSupabaseEnabled]);
 
   const handleChildChange = (event) => {
     const { name, value, type, checked } = event.target;
@@ -515,6 +582,7 @@ function App() {
       allowPhotos: updateForm.allowPhotos,
       notes: updateForm.notes.trim(),
       signedIn: existingRecord.lastStatus === 'sign_in',
+      signedInUserId: existingRecord.signedInUserId,
     };
 
     const hasChanges = Object.keys(updatedChild).some(
@@ -563,6 +631,8 @@ function App() {
             typeof resolvedChild.signedIn === 'boolean'
               ? resolvedChild.signedIn
               : existingRecord.lastStatus === 'sign_in',
+          signedInUserId:
+            resolvedChild.signedInUserId || existingRecord.signedInUserId || '',
         };
   setSupabaseStatus('Child details updated in Supabase.');
   await fetchChildren();
@@ -586,6 +656,11 @@ function App() {
   const recordCheckin = React.useCallback(async (child, action, timestamp) => {
     const actionTimestamp = timestamp || new Date().toISOString();
 
+    if (isSupabaseEnabled && !authUserId) {
+      setError('Start a secure session before signing in or out.');
+      return { success: false };
+    }
+
     if (isSupabaseEnabled) {
       const { error: checkinError } = await supabase
         .from('checkins')
@@ -607,6 +682,7 @@ function App() {
           last_status: action,
           last_action_at: actionTimestamp,
           signed_in: action === 'sign_in',
+          signed_in_user_id: action === 'sign_in' ? authUserId : null,
         })
         .eq('id', child.id);
       if (statusError) {
@@ -621,6 +697,7 @@ function App() {
               lastStatus: action,
               lastActionAt: actionTimestamp,
               signedIn: action === 'sign_in',
+              signedInUserId: action === 'sign_in' ? authUserId : '',
             }
             : record
         )
@@ -632,6 +709,7 @@ function App() {
             lastStatus: action,
             lastActionAt: actionTimestamp,
             signedIn: action === 'sign_in',
+            signedInUserId: action === 'sign_in' ? authUserId : '',
           }
           : prev
       );
@@ -648,6 +726,7 @@ function App() {
               lastStatus: action,
               lastActionAt: actionTimestamp,
               signedIn: action === 'sign_in',
+              signedInUserId: action === 'sign_in' ? authUserId : '',
             }
             : record
         )
@@ -659,6 +738,7 @@ function App() {
             lastStatus: action,
             lastActionAt: actionTimestamp,
             signedIn: action === 'sign_in',
+            signedInUserId: action === 'sign_in' ? authUserId : '',
           }
           : prev
       );
@@ -805,7 +885,11 @@ function App() {
     if (!term) {
       return false;
     }
-    if (child.lastStatus === 'sign_in' && child.id !== signedInChildId) {
+    if (
+      child.lastStatus === 'sign_in'
+      && child.signedInUserId
+      && child.signedInUserId !== authUserId
+    ) {
       return false;
     }
     return [child.name]
@@ -821,7 +905,9 @@ function App() {
     : [];
   const canViewDetails =
     selectedChild
-    && (selectedChild.lastStatus !== 'sign_in' || selectedChild.id === signedInChildId);
+    && (!isSupabaseEnabled
+      || selectedChild.lastStatus !== 'sign_in'
+      || selectedChild.signedInUserId === authUserId);
   const birthdayChildren = children.filter(
     (child) => child.dateOfBirth && isBirthdayToday(child.dateOfBirth)
   );
@@ -885,24 +971,37 @@ function App() {
         )}
 
         {view === 'checkin' && (
-          <CheckinView
-            searchTerm={searchTerm}
-            onSearchChange={(event) => setSearchTerm(event.target.value)}
-            filteredChildren={filteredChildren}
-            signedInChildren={scopedSignedInChildren}
-            requestSignIn={requestSignIn}
-            requestSignOut={requestSignOut}
-            onSelectChild={(child) => {
-              setSelectedChild(child);
-              setView('details');
-            }}
-            isBirthdayToday={isBirthdayToday}
-            isScannerActive={isScannerActive}
-            onToggleScanner={handleScannerToggle}
-            scanNotice={scanNotice}
-            onScan={handleScanResult}
-            onScanError={handleScannerError}
-          />
+          authUserId || !isSupabaseEnabled ? (
+            <CheckinView
+              searchTerm={searchTerm}
+              onSearchChange={(event) => setSearchTerm(event.target.value)}
+              filteredChildren={filteredChildren}
+              signedInChildren={scopedSignedInChildren}
+              requestSignIn={requestSignIn}
+              requestSignOut={requestSignOut}
+              onSelectChild={(child) => {
+                setSelectedChild(child);
+                setView('details');
+              }}
+              isBirthdayToday={isBirthdayToday}
+              isScannerActive={isScannerActive}
+              onToggleScanner={handleScannerToggle}
+              scanNotice={scanNotice}
+              onScan={handleScanResult}
+              onScanError={handleScannerError}
+            />
+          ) : (
+            <section className="card card--center">
+              <h2>Start a secure session</h2>
+              <p className="card__subtitle">
+                This keeps child details private on each device.
+              </p>
+              {authNotice && <div className="status status--error">{authNotice}</div>}
+              <button type="button" onClick={handleStartSession}>
+                Start secure session
+              </button>
+            </section>
+          )
         )}
 
         {view === 'details' && selectedChild && canViewDetails && (
@@ -930,7 +1029,7 @@ function App() {
           <section className="card card--center">
             <h2>Private child details</h2>
             <p className="card__subtitle">
-              This child is signed in on another device. Ask the parent to sign out from that device.
+              This child is signed in on another session. Ask the parent to sign out from that session.
             </p>
             <button type="button" onClick={() => setView('checkin')}>
               Back to check-in

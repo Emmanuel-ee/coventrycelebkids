@@ -13,6 +13,13 @@ REACT_APP_SUPABASE_URL=your-project-url
 REACT_APP_SUPABASE_ANON_KEY=your-anon-key
 ```
 
+### Enable anonymous sessions (privacy tokens)
+
+This app uses Supabase Auth anonymous sessions to keep signed-in child details private per parent/device.
+
+1. In Supabase, go to **Authentication → Providers**.
+2. Enable **Anonymous Sign-ins**.
+
 ## Deploy with GitHub Actions (GitHub Pages)
 
 This repo includes a workflow in `.github/workflows/deploy.yml` that builds and deploys the app to GitHub Pages on pushes to `main`.
@@ -44,13 +51,14 @@ REACT_APP_SUPABASE_ANON_KEY=your-anon-key
 | last_status | text | sign_in or sign_out |
 | last_action_at | timestamptz | Last sign in/out time |
 | signed_in | boolean | True when currently signed in |
+| signed_in_user_id | uuid | Supabase auth user id that last signed in |
 | allow_photos | boolean | Photo consent |
 | notes | text | Optional notes |
 | created_at | timestamptz | Defaults to now() |
 
 ### Children table RLS policies
 
-If you enable RLS on `children`, add these policies so updates work from the app:
+If you enable RLS on `children`, add these policies so updates work from the app. When using Supabase Auth, prefer the authenticated policies shown below.
 
 ```
 alter table public.children enable row level security;
@@ -73,6 +81,20 @@ for update
 to anon
 using (true)
 with check (true);
+
+-- Authenticated policies (recommended with anonymous auth sessions)
+create policy "Allow authenticated children read"
+on public.children
+for select
+to authenticated
+using (signed_in_user_id is null or signed_in_user_id = auth.uid());
+
+create policy "Allow authenticated children update"
+on public.children
+for update
+to authenticated
+using (signed_in_user_id is null or signed_in_user_id = auth.uid())
+with check (signed_in_user_id is null or signed_in_user_id = auth.uid());
 ```
 
 ### SQL to add the new columns
@@ -90,6 +112,7 @@ alter table public.children
 	add column if not exists last_status text,
 	add column if not exists last_action_at timestamptz,
 	add column if not exists signed_in boolean default false,
+	add column if not exists signed_in_user_id uuid,
 	add column if not exists qr_code text,
 	add column if not exists allow_photos boolean default false;
 	add column if not exists notes text;
