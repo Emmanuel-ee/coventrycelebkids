@@ -1,4 +1,5 @@
 import React from 'react';
+import { QRCodeCanvas } from 'qrcode.react';
 
 const DetailsView = ({
   selectedChild,
@@ -16,6 +17,8 @@ const DetailsView = ({
   isSendingMessage,
   typingUsers,
   onTyping,
+  onArchiveMessage,
+  qrCodeValue,
 }) => (
   <section
     className={`card${
@@ -117,6 +120,14 @@ const DetailsView = ({
       )}
     </div>
     <div className="divider" />
+    <div className="qr-section">
+      <h3>Child QR code</h3>
+      <p className="card__subtitle">Scan to sign in or sign out this child.</p>
+      <div className="qr-card">
+        <QRCodeCanvas value={qrCodeValue} size={160} includeMargin />
+      </div>
+    </div>
+    <div className="divider" />
     <div className="message-section">
       <h3>Messages</h3>
       <p className="card__subtitle">Recent notes for this child.</p>
@@ -139,9 +150,18 @@ const DetailsView = ({
             <li key={message.id} className="message-item">
               <div className="message-item__header">
                 <strong>{message.sender}</strong>
-                {message.createdAt && (
-                  <span>{new Date(message.createdAt).toLocaleString()}</span>
-                )}
+                <div className="message-item__meta">
+                  {message.createdAt && (
+                    <span>{new Date(message.createdAt).toLocaleString()}</span>
+                  )}
+                  <button
+                    type="button"
+                    className="ghost"
+                    onClick={() => onArchiveMessage(message.id)}
+                  >
+                    Archive
+                  </button>
+                </div>
               </div>
               <p>{message.message}</p>
             </li>

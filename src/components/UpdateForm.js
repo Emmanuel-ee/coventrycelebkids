@@ -8,6 +8,8 @@ const UpdateForm = ({
   getClassCategory,
   getAgeFromDob,
   onBack,
+  isSaving,
+  successNotice,
 }) => (
   <section className="card">
     <div className="card__header">
@@ -20,6 +22,7 @@ const UpdateForm = ({
       </button>
     </div>
     <form className="form" onSubmit={onSubmit}>
+      {successNotice && <div className="status status--success">{successNotice}</div>}
       <label>
         Child's name
         <input
@@ -129,7 +132,9 @@ const UpdateForm = ({
           placeholder="Allergies, pickup notes, etc."
         />
       </label>
-      <button type="submit">Save updates</button>
+      <button type="submit" disabled={isSaving}>
+        {isSaving ? 'Save updates' : 'Save updates'}
+      </button>
     </form>
   </section>
 );

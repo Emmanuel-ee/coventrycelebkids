@@ -32,6 +32,7 @@ REACT_APP_SUPABASE_ANON_KEY=your-anon-key
 | Column | Type | Notes |
 | --- | --- | --- |
 | id | text | Primary key (UUID or text) |
+| qr_code | text | Unique QR code value used for scanning |
 | name | text | Child name |
 | age | text | Optional |
 | date_of_birth | date | Optional |
@@ -45,6 +46,33 @@ REACT_APP_SUPABASE_ANON_KEY=your-anon-key
 | allow_photos | boolean | Photo consent |
 | notes | text | Optional notes |
 | created_at | timestamptz | Defaults to now() |
+
+### Children table RLS policies
+
+If you enable RLS on `children`, add these policies so updates work from the app:
+
+```
+alter table public.children enable row level security;
+
+create policy "Allow anon children read"
+on public.children
+for select
+to anon
+using (true);
+
+create policy "Allow anon children insert"
+on public.children
+for insert
+to anon
+with check (true);
+
+create policy "Allow anon children update"
+on public.children
+for update
+to anon
+using (true)
+with check (true);
+```
 
 ### SQL to add the new columns
 
@@ -60,6 +88,7 @@ alter table public.children
 	add column if not exists class_category text,
 	add column if not exists last_status text,
 	add column if not exists last_action_at timestamptz,
+	add column if not exists qr_code text,
 	add column if not exists allow_photos boolean default false;
 	add column if not exists notes text;
 
@@ -145,6 +174,7 @@ create table if not exists public.child_messages (
 	child_id text references public.children(id) on delete cascade,
 	sender_name text,
 	message text not null,
+	archived boolean not null default false,
 	created_at timestamptz not null default now()
 );
 
@@ -160,6 +190,13 @@ create policy "Allow anon child messages insert"
 on public.child_messages
 for insert
 to anon
+with check (true);
+
+create policy "Allow anon child messages update"
+on public.child_messages
+for update
+to anon
+using (true)
 with check (true);
 ```
 ```

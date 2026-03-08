@@ -28,6 +28,7 @@ const loadLocalCheckins = (storageKey) => {
 
 const mapChildFromDb = (child) => ({
   id: child.id,
+  qrCode: child.qr_code || child.qrCode || '',
   name: child.name || '',
   age: child.age || '',
   dateOfBirth: child.date_of_birth || child.dateOfBirth || '',
@@ -48,6 +49,7 @@ const mapChildFromDb = (child) => ({
 
 const mapChildToDb = (child) => ({
   id: child.id,
+  qr_code: child.qrCode || null,
   name: child.name,
   age: child.age || null,
   date_of_birth: child.dateOfBirth || null,

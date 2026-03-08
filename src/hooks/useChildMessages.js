@@ -32,7 +32,7 @@ const useChildMessages = ({ childId, isSupabaseEnabled, supabase, storageKey, de
         const stored = localStorage.getItem(storageKey);
         const parsed = stored ? JSON.parse(stored) : [];
         const filtered = Array.isArray(parsed)
-          ? parsed.filter((item) => item.childId === childId)
+          ? parsed.filter((item) => item.childId === childId && !item.archived)
           : [];
         setMessages(
           filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
@@ -48,8 +48,9 @@ const useChildMessages = ({ childId, isSupabaseEnabled, supabase, storageKey, de
     const fetchMessages = async () => {
       const { data, error } = await supabase
         .from('child_messages')
-        .select('id, child_id, sender_name, message, created_at')
+        .select('id, child_id, sender_name, message, created_at, archived')
         .eq('child_id', childId)
+        .eq('archived', false)
         .order('created_at', { ascending: false });
 
       if (!isActive) {
@@ -67,6 +68,7 @@ const useChildMessages = ({ childId, isSupabaseEnabled, supabase, storageKey, de
         sender: message.sender_name || DEFAULT_SENDER,
         message: message.message || '',
         createdAt: message.created_at || '',
+        archived: Boolean(message.archived),
       }));
 
       setMessages(mapped);
@@ -82,6 +84,10 @@ const useChildMessages = ({ childId, isSupabaseEnabled, supabase, storageKey, de
         { event: 'INSERT', schema: 'public', table: 'child_messages', filter: `child_id=eq.${childId}` },
         (payload) => {
           const incoming = payload.new;
+          if (incoming.archived) {
+            setMessages((prev) => prev.filter((item) => item.id !== incoming.id));
+            return;
+          }
           setMessages((prev) => {
             if (prev.some((item) => item.id === incoming.id)) {
               return prev;
@@ -93,10 +99,21 @@ const useChildMessages = ({ childId, isSupabaseEnabled, supabase, storageKey, de
                 sender: incoming.sender_name || DEFAULT_SENDER,
                 message: incoming.message || '',
                 createdAt: incoming.created_at || '',
+                archived: Boolean(incoming.archived),
               },
               ...prev,
             ];
           });
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'child_messages', filter: `child_id=eq.${childId}` },
+        (payload) => {
+          const incoming = payload.new;
+          if (incoming.archived) {
+            setMessages((prev) => prev.filter((item) => item.id !== incoming.id));
+          }
         }
       )
       .subscribe();
@@ -147,7 +164,7 @@ const useChildMessages = ({ childId, isSupabaseEnabled, supabase, storageKey, de
       return;
     }
     lastTypingSentRef.current = now;
-    const senderName = draft.sender.trim() || defaultSender || DEFAULT_SENDER;
+  const senderName = draft.sender.trim() || defaultSender || DEFAULT_SENDER;
     typingChannelRef.current.send({
       type: 'broadcast',
       event: 'typing',
@@ -199,6 +216,7 @@ const useChildMessages = ({ childId, isSupabaseEnabled, supabase, storageKey, de
         childId,
         sender: senderName,
         message: trimmedMessage,
+        archived: false,
         createdAt: new Date().toISOString(),
       };
       const updated = [newMessage, ...baseMessages];
@@ -215,6 +233,42 @@ const useChildMessages = ({ childId, isSupabaseEnabled, supabase, storageKey, de
     }
   };
 
+  const archiveMessage = async (messageId) => {
+    if (!messageId) {
+      return { success: false };
+    }
+
+    if (isSupabaseEnabled) {
+      const { error } = await supabase
+        .from('child_messages')
+        .update({ archived: true })
+        .eq('id', messageId);
+
+      if (error) {
+        setStatus('Unable to archive message right now.');
+        return { success: false };
+      }
+
+      setMessages((prev) => prev.filter((item) => item.id !== messageId));
+      return { success: true };
+    }
+
+    try {
+      const stored = localStorage.getItem(storageKey);
+      const parsed = stored ? JSON.parse(stored) : [];
+      const baseMessages = Array.isArray(parsed) ? parsed : [];
+      const updated = baseMessages.map((item) =>
+        item.id === messageId ? { ...item, archived: true } : item
+      );
+      localStorage.setItem(storageKey, JSON.stringify(updated));
+      setMessages((prev) => prev.filter((item) => item.id !== messageId));
+      return { success: true };
+    } catch (error) {
+      setStatus('Unable to archive message locally.');
+      return { success: false };
+    }
+  };
+
   return {
     messages,
     status,
@@ -224,6 +278,7 @@ const useChildMessages = ({ childId, isSupabaseEnabled, supabase, storageKey, de
     isSending,
     typingUsers,
     broadcastTyping,
+    archiveMessage,
   };
 };
 

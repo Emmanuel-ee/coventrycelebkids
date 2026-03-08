@@ -402,6 +402,44 @@ button.ghost:hover {
   gap: 12px;
 }
 
+.qr-section {
+  display: grid;
+  gap: 10px;
+  text-align: center;
+}
+
+.qr-card {
+  display: flex;
+  justify-content: center;
+  padding: 16px;
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid #e4e7ec;
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08);
+}
+
+.qr-scanner {
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid #e4e7ec;
+  background: #0f172a;
+}
+
+.qr-scanner__video {
+  width: 100%;
+  height: 240px;
+  object-fit: cover;
+  display: block;
+}
+
+.scan-helper,
+.scan-notice {
+  margin: 12px 0 0;
+  font-size: 14px;
+  color: #475467;
+  font-weight: 600;
+}
+
 .message-list {
   list-style: none;
   padding: 0;
@@ -425,6 +463,17 @@ button.ghost:hover {
   gap: 12px;
   font-size: 13px;
   color: #475467;
+}
+
+.message-item__meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.message-item__meta .ghost {
+  padding: 6px 10px;
+  font-size: 12px;
 }
 
 .message-item p {
@@ -495,4 +544,28 @@ button.ghost:hover {
     max-width: 240px;
   }
 
+}
+
+@media (max-width: 640px) {
+  .app {
+    padding: 20px 16px 32px;
+    border-radius: 18px;
+  }
+
+  .app__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .card {
+    padding: 18px;
+  }
+
+  .button-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .button-row button {
+    width: 100%;
+  }
 }

@@ -26,7 +26,7 @@ const HomeView = ({
           Drop off / Pick up
         </button>
       </div>
-      {isLoading && <div className="empty">Connecting to Supabase…</div>}
+  {isLoading && <div className="empty" />}
     </section>
     <section className="card">
       <div className="card__header">

@@ -46,13 +46,19 @@ function App() {
     isSupabaseEnabled ? [] : loadLocalCheckins(CHECKIN_KEY)
   );
   const [isLoading, setIsLoading] = React.useState(isSupabaseEnabled);
+  const [isUpdatingChild, setIsUpdatingChild] = React.useState(false);
   const [error, setError] = React.useState('');
   const [supabaseStatus, setSupabaseStatus] = React.useState('');
   const [view, setView] = React.useState('home');
+  const [updateNotice, setUpdateNotice] = React.useState('');
   const [searchTerm, setSearchTerm] = React.useState('');
   const [selectedChild, setSelectedChild] = React.useState(null);
   const [confirmAction, setConfirmAction] = React.useState(null);
+  const [pendingScanId, setPendingScanId] = React.useState('');
+  const [isScannerActive, setIsScannerActive] = React.useState(false);
+  const [scanNotice, setScanNotice] = React.useState('');
   const birthdayAlertsRef = React.useRef(new Set());
+  const lastScanRef = React.useRef({ value: '', timestamp: 0 });
   const [selectedAnnouncement, setSelectedAnnouncement] = React.useState(null);
   const [childForm, setChildForm] = useDraftStorage(DRAFT_KEY, {
     name: '',
@@ -93,6 +99,7 @@ function App() {
     isSending: isSendingMessage,
     typingUsers: childTypingUsers,
     broadcastTyping,
+    archiveMessage,
   } = useChildMessages({
     childId: selectedChild?.id,
     isSupabaseEnabled,
@@ -125,7 +132,17 @@ function App() {
 
   React.useEffect(() => {
     setError('');
+    setUpdateNotice('');
+    setScanNotice('');
   }, [view]);
+
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const scanId = params.get('scan');
+    if (scanId) {
+      setPendingScanId(scanId);
+    }
+  }, []);
 
   React.useEffect(() => {
     if (!isSupabaseEnabled) {
@@ -195,7 +212,11 @@ function App() {
         return child;
       });
 
-      setChildren(childrenWithUpdatedAges);
+      const childrenWithQrCodes = childrenWithUpdatedAges.map((child) =>
+        child.qrCode ? child : { ...child, qrCode: createId() }
+      );
+
+      setChildren(childrenWithQrCodes);
       setIsLoading(false);
 
       if (childrenWithUpdatedAges.length) {
@@ -207,15 +228,19 @@ function App() {
         });
       }
 
-      const updates = childrenWithUpdatedAges.filter(
-        (child, index) => child.age !== mergedChildren[index].age
-      );
+      const updates = childrenWithQrCodes.filter((child, index) => {
+        const previous = mergedChildren[index];
+        return child.age !== previous.age || child.qrCode !== previous.qrCode;
+      });
       if (isSupabaseEnabled && updates.length) {
         await Promise.all(
           updates.map((child) =>
             supabase
               .from('children')
-              .update({ age: child.age })
+              .update({
+                age: child.age || null,
+                qr_code: child.qrCode || null,
+              })
               .eq('id', child.id)
           )
         );
@@ -244,11 +269,18 @@ function App() {
       }
       return child;
     });
+    const childrenWithQrCodes = updatedChildren.map((child) => {
+      if (child.qrCode) {
+        return child;
+      }
+      needsUpdate = true;
+      return { ...child, qrCode: createId() };
+    });
     if (needsUpdate) {
-      setChildren(updatedChildren);
+      setChildren(childrenWithQrCodes);
     }
     const seen = birthdayAlertsRef.current;
-    updatedChildren.forEach((child) => {
+    childrenWithQrCodes.forEach((child) => {
       if (child.dateOfBirth && isBirthdayToday(child.dateOfBirth, today)) {
         seen.add(child.id);
       }
@@ -274,7 +306,7 @@ function App() {
   };
 
   const handleStartUpdate = (child) => {
-  setUpdateForm(buildFormFromChild(child, KNOWN_ALLERGIES));
+    setUpdateForm(buildFormFromChild(child, KNOWN_ALLERGIES));
     setSelectedChild(child);
     setView('update');
   };
@@ -329,9 +361,10 @@ function App() {
 
     const newChild = {
       id: createId(),
+      qrCode: createId(),
       name: childForm.name.trim(),
-    age: derivedAge,
-    dateOfBirth,
+      age: derivedAge,
+      dateOfBirth,
       sex: formSex,
       guardianName: childForm.guardianName.trim(),
       guardianContact: childForm.guardianContact.trim(),
@@ -385,7 +418,9 @@ function App() {
     if (!selectedChild) {
       return;
     }
-    const existingRecord = children.find((child) => child.id === selectedChild.id);
+    setUpdateNotice('');
+    const childId = selectedChild.id;
+    const existingRecord = children.find((child) => child.id === childId);
     if (!existingRecord) {
       setError('Unable to update: child record was not found. Please search and try again.');
       return;
@@ -440,46 +475,54 @@ function App() {
     );
     if (!hasChanges) {
       setSupabaseStatus('No changes to update.');
+      setUpdateNotice('');
       setView('details');
       return;
     }
 
+    setUpdateNotice('Save updates...');
+    setIsUpdatingChild(true);
     let resolvedChild = updatedChild;
-
-    if (isSupabaseEnabled) {
-      setSupabaseStatus('');
-      const { error: updateError } = await supabase
-        .from('children')
-        .update(mapChildToDb(updatedChild))
-        .eq('id', existingRecord.id);
-      if (updateError) {
-        setError(`Unable to update child details. ${updateError.message}`);
-        return;
+    try {
+      if (isSupabaseEnabled) {
+        setSupabaseStatus('');
+        const { data: updatedRows, error: updateError } = await supabase
+          .from('children')
+          .update(mapChildToDb(updatedChild))
+          .eq('id', childId)
+          .select('*');
+        if (updateError) {
+          setError(`Unable to update child details. ${updateError.message}`);
+          setUpdateNotice('');
+          return;
+        }
+        if (!Array.isArray(updatedRows) || updatedRows.length === 0) {
+          setError(
+            'Supabase did not apply the update. Check that RLS policies allow updates on the children table.'
+          );
+          setUpdateNotice('');
+          return;
+        }
+        resolvedChild = mapChildFromDb(updatedRows[0]);
+        setSupabaseStatus('Child details updated in Supabase.');
+      } else {
+        setSupabaseStatus('Child details updated.');
       }
 
-      const { data: refreshedChild, error: refreshError } = await supabase
-        .from('children')
-        .select('*')
-        .eq('id', existingRecord.id)
-        .single();
-
-      if (!refreshError && refreshedChild) {
-        resolvedChild = mapChildFromDb(refreshedChild);
-      }
-
-      setSupabaseStatus('Child details updated in Supabase.');
-    } else {
-      setSupabaseStatus('Child details updated.');
+      setChildren((prev) =>
+        prev.map((record) => (record.id === childId ? resolvedChild : record))
+      );
+      setSelectedChild(resolvedChild);
+      setUpdateNotice('Child details updated. Returning to details...');
+      setTimeout(() => {
+        setView('details');
+      }, 1400);
+    } finally {
+      setIsUpdatingChild(false);
     }
-
-    setChildren((prev) =>
-      prev.map((record) => (record.id === existingRecord.id ? resolvedChild : record))
-    );
-    setSelectedChild(resolvedChild);
-    setView('details');
   };
 
-  const recordCheckin = async (child, action, timestamp) => {
+  const recordCheckin = React.useCallback(async (child, action, timestamp) => {
     const actionTimestamp = timestamp || new Date().toISOString();
 
     if (isSupabaseEnabled) {
@@ -540,7 +583,39 @@ function App() {
       `${child.name} ${action === 'sign_in' ? 'signed in' : 'signed out'} successfully.`
     );
     return { success: true, timestamp: actionTimestamp };
-  };
+  }, []);
+
+  React.useEffect(() => {
+    if (!pendingScanId || children.length === 0) {
+      return;
+    }
+
+    const child = children.find(
+      (record) => record.qrCode === pendingScanId || record.id === pendingScanId
+    );
+    if (!child) {
+      setError('Unable to find a child for this QR code.');
+      setScanNotice('We could not find a child for this QR code.');
+      setPendingScanId('');
+      return;
+    }
+
+    const action = child.lastStatus === 'sign_in' ? 'sign_out' : 'sign_in';
+    const handleScan = async () => {
+      setIsScannerActive(false);
+      setSelectedChild(child);
+      const result = await recordCheckin(child, action);
+      if (result.success) {
+        setView('details');
+      }
+      const url = new URL(window.location.href);
+      url.searchParams.delete('scan');
+      window.history.replaceState({}, '', url.toString());
+      setPendingScanId('');
+    };
+
+    handleScan();
+  }, [pendingScanId, children, recordCheckin]);
 
   const requestSignIn = (child) => {
     setConfirmAction({ type: 'sign_in', child, timestamp: new Date().toISOString() });
@@ -579,6 +654,56 @@ function App() {
     setConfirmAction(null);
   };
 
+  const parseScanValue = React.useCallback((value) => {
+    if (!value) {
+      return '';
+    }
+    try {
+      const url = new URL(value);
+      return url.searchParams.get('scan') || '';
+    } catch (error) {
+      const match = value.match(/scan=([^&]+)/i);
+      if (match && match[1]) {
+        return decodeURIComponent(match[1]);
+      }
+      return value.trim();
+    }
+  }, []);
+
+  const handleScannerToggle = () => {
+    setScanNotice('');
+    setIsScannerActive((prev) => !prev);
+  };
+
+  const handleScannerError = (scanError) => {
+    if (!scanError) {
+      return;
+    }
+    setScanNotice('Unable to access the camera. Check permissions and try again.');
+  };
+
+  const handleScanResult = (value) => {
+    const trimmedValue = value?.trim();
+    if (!trimmedValue) {
+      return;
+    }
+    const now = Date.now();
+    if (
+      lastScanRef.current.value === trimmedValue
+      && now - lastScanRef.current.timestamp < 4000
+    ) {
+      return;
+    }
+    lastScanRef.current = { value: trimmedValue, timestamp: now };
+    const scanId = parseScanValue(trimmedValue);
+    if (!scanId) {
+      setScanNotice('We could not read that QR code. Try again.');
+      return;
+    }
+    setScanNotice('QR code captured. Checking the child record...');
+    setPendingScanId(scanId);
+  };
+
 
   const filteredChildren = children.filter((child) => {
     const term = searchTerm.trim().toLowerCase();
@@ -594,6 +719,9 @@ function App() {
   const birthdayChildren = children.filter(
     (child) => child.dateOfBirth && isBirthdayToday(child.dateOfBirth)
   );
+  const qrCodeValue = selectedChild
+    ? `${window.location.origin}${process.env.PUBLIC_URL || ''}/?scan=${selectedChild.qrCode || selectedChild.id}`
+    : '';
 
   return (
     <div
@@ -645,6 +773,8 @@ function App() {
             getClassCategory={getClassCategory}
             getAgeFromDob={getAgeFromDob}
             onBack={() => setView('details')}
+            isSaving={isUpdatingChild}
+            successNotice={updateNotice}
           />
         )}
 
@@ -661,6 +791,11 @@ function App() {
               setView('details');
             }}
             isBirthdayToday={isBirthdayToday}
+            isScannerActive={isScannerActive}
+            onToggleScanner={handleScannerToggle}
+            scanNotice={scanNotice}
+            onScan={handleScanResult}
+            onScanError={handleScannerError}
           />
         )}
 
@@ -681,6 +816,8 @@ function App() {
             isSendingMessage={isSendingMessage}
             typingUsers={childTypingUsers}
             onTyping={broadcastTyping}
+            onArchiveMessage={archiveMessage}
+            qrCodeValue={qrCodeValue}
           />
         )}
       </main>

@@ -1,4 +1,5 @@
 import React from 'react';
+import QrScanner from './QrScanner';
 
 const CheckinView = ({
   searchTerm,
@@ -9,8 +10,34 @@ const CheckinView = ({
   requestSignOut,
   onSelectChild,
   isBirthdayToday,
+  isScannerActive,
+  onToggleScanner,
+  scanNotice,
+  onScan,
+  onScanError,
 }) => (
   <>
+    <section className="card">
+      <div className="card__header">
+        <div>
+          <h2>Scan QR code</h2>
+          <p className="card__subtitle">
+            Use the camera to scan a child QR code and toggle sign-in/out.
+          </p>
+        </div>
+        <button type="button" className="ghost" onClick={onToggleScanner}>
+          {isScannerActive ? 'Stop camera' : 'Open camera'}
+        </button>
+      </div>
+      {isScannerActive ? (
+        <>
+          <QrScanner isActive={isScannerActive} onScan={onScan} onError={onScanError} />
+          {scanNotice && <p className="scan-notice">{scanNotice}</p>}
+        </>
+      ) : (
+        <p className="scan-helper">Camera stays off until you open it.</p>
+      )}
+    </section>
     <section className="card">
       <div className="card__header">
         <div>
