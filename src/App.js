@@ -238,7 +238,7 @@ function App() {
         )
       );
     }
-  }, [isSupabaseEnabled, supabase]);
+  }, []);
 
   React.useEffect(() => {
     if (!isSupabaseEnabled) {
@@ -247,7 +247,7 @@ function App() {
 
     fetchChildren();
     return undefined;
-  }, [fetchChildren, isSupabaseEnabled]);
+  }, [fetchChildren]);
 
   React.useEffect(() => {
     if (isSupabaseEnabled || children.length === 0) {
