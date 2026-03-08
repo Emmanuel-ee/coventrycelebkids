@@ -144,7 +144,7 @@ function App() {
       isActive = false;
       subscription?.subscription?.unsubscribe();
     };
-  }, [isSupabaseEnabled, supabase]);
+  }, []);
 
   const handleStartSession = async () => {
     if (!isSupabaseEnabled) {
@@ -172,7 +172,7 @@ function App() {
       return digits.length > 11;
     }
     return digits.length === 11;
-  }, [authUserId, isSupabaseEnabled, supabase]);
+  }, []);
 
   React.useEffect(() => {
     if (!isSupabaseEnabled) {
@@ -216,7 +216,7 @@ function App() {
     if (scanId) {
       setPendingScanId(scanId);
     }
-  }, [authUserId, isSupabaseEnabled, supabase]);
+  }, []);
 
   const fetchChildren = React.useCallback(async () => {
     if (!isSupabaseEnabled) {
@@ -323,7 +323,7 @@ function App() {
         )
       );
     }
-  }, []);
+  }, [authUserId]);
 
   React.useEffect(() => {
     if (!isSupabaseEnabled) {
@@ -382,13 +382,13 @@ function App() {
     if (!stillSignedIn) {
       setSignedInChildId('');
     }
-  }, [authUserId, children, isSupabaseEnabled, signedInChildId]);
+  }, [authUserId, children, signedInChildId]);
 
   React.useEffect(() => {
     if (isSupabaseEnabled && !authUserId) {
       setSignedInChildId('');
     }
-  }, [authUserId, isSupabaseEnabled]);
+  }, [authUserId]);
 
   const handleChildChange = (event) => {
     const { name, value, type, checked } = event.target;
@@ -748,7 +748,7 @@ function App() {
       `${child.name} ${action === 'sign_in' ? 'signed in' : 'signed out'} successfully.`
     );
     return { success: true, timestamp: actionTimestamp };
-  }, []);
+  }, [authUserId]);
 
   React.useEffect(() => {
     if (!pendingScanId || children.length === 0) {
