@@ -23,7 +23,7 @@ describe('AppHeader', () => {
 
     expect(screen.getByText(/supabase missing/i)).toBeInTheDocument();
     expect(screen.getByText(/all good/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /home/i })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /back/i })).toBeInTheDocument();
   });
 
   it('hides the checkin home shortcut outside checkin view', () => {

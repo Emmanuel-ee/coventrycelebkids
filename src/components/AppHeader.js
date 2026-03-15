@@ -26,8 +26,13 @@ const AppHeader = ({
         <p className="app__eyebrow">In Christ For Christ With Joy</p>
       </h1>
       {view === 'checkin' && (
-        <button className="ghost" type="button" onClick={onNavigateHome}>
-          Home
+        <button
+          className="ghost back-arrow"
+          type="button"
+          onClick={onNavigateHome}
+          aria-label="Back"
+        >
+          ←
         </button>
       )}
     </div>
