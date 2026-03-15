@@ -24,7 +24,7 @@ export const KNOWN_ALLERGIES = [
 export const DEFAULT_ANNOUNCEMENTS = [
   {
     id: 'welcome',
-    title: 'Welcome to Celebkids & Celeb Teens',
+    title: 'Welcome to Celebkids / Teens',
     message: 'Please register once, then sign in/out each week.',
   },
   {
