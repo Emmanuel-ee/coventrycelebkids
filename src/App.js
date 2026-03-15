@@ -38,6 +38,7 @@ import useAnnouncements from './hooks/useAnnouncements';
 import useChildMessages from './hooks/useChildMessages';
 import useDraftStorage from './hooks/useDraftStorage';
 
+const isSunday = () => new Date().getDay() === 0;
 
 function App() {
   const [children, setChildren] = React.useState(() =>
@@ -63,6 +64,7 @@ function App() {
   );
   const [authUserId, setAuthUserId] = React.useState('');
   const isStartingAuthRef = React.useRef(false);
+  const checkinAllowed = isSunday();
   const birthdayAlertsRef = React.useRef(new Set());
   const lastScanRef = React.useRef({ value: '', timestamp: 0 });
   const [selectedAnnouncement, setSelectedAnnouncement] = React.useState(null);
@@ -562,7 +564,7 @@ function App() {
     const derivedClassCategory = getClassCategory(derivedAge);
     const parsedAge = Number.parseInt(derivedAge, 10);
     if (!Number.isNaN(parsedAge) && parsedAge > 19) {
-      setError('Ages 20 and above cannot be registered. Ages 13-19 should register in Celeb Teens.');
+      setError('Ages 20 and above cannot be registered.');
       setSupabaseStatus('');
       return;
     }
@@ -656,6 +658,11 @@ function App() {
 
   const recordCheckin = React.useCallback(async (child, action, timestamp) => {
     const actionTimestamp = timestamp || new Date().toISOString();
+
+    if (!isSunday()) {
+      setError('Drop-off and pick-up are available on Sundays only.');
+      return { success: false };
+    }
 
     if (isSupabaseEnabled && !authUserId) {
       setError('Start a secure session before signing in or out.');
@@ -753,6 +760,13 @@ function App() {
 
   React.useEffect(() => {
     if (!pendingScanId || children.length === 0) {
+      return;
+    }
+
+    if (!isSunday()) {
+      setError('Drop-off and pick-up are available on Sundays only.');
+      setScanNotice('Check-in is available on Sundays only.');
+      setPendingScanId('');
       return;
     }
 
@@ -998,6 +1012,7 @@ function App() {
             scanNotice={scanNotice}
             onScan={handleScanResult}
             onScanError={handleScannerError}
+            isCheckinAllowed={checkinAllowed}
           />
         )}
 

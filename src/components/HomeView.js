@@ -19,7 +19,7 @@ const HomeView = ({
         </p>
       </div>
       <div className="home-actions">
-        <button type="button" className="button--primary" onClick={onRegister}>
+        <button type="button" className="button--primary button--bold" onClick={onRegister}>
           Register your Child
         </button>
         <button type="button" className="button--secondary" onClick={onCheckin}>

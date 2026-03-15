@@ -18,7 +18,7 @@ describe('AppHeader', () => {
       />
     );
 
-    await userEvent.click(screen.getByRole('button', { name: /coventry celebkids & celeb teens/i }));
+    await userEvent.click(screen.getByRole('button', { name: /coventry celebkids & Teens/i }));
     expect(onNavigateHome).toHaveBeenCalledTimes(1);
 
     expect(screen.getByText(/supabase missing/i)).toBeInTheDocument();

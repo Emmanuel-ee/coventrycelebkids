@@ -15,6 +15,7 @@ const CheckinView = ({
   scanNotice,
   onScan,
   onScanError,
+  isCheckinAllowed,
 }) => (
   <>
     <section className="card">
@@ -25,10 +26,18 @@ const CheckinView = ({
             Use the camera to scan a child QR code and toggle sign-in/out.
           </p>
         </div>
-        <button type="button" className="ghost" onClick={onToggleScanner}>
+        <button
+          type="button"
+          className="ghost"
+          onClick={onToggleScanner}
+          disabled={!isCheckinAllowed}
+        >
           {isScannerActive ? 'Stop camera' : 'Open camera'}
         </button>
       </div>
+      {!isCheckinAllowed && (
+        <p className="scan-notice">Check-in is available on Sundays only.</p>
+      )}
       {isScannerActive ? (
         <>
           <QrScanner isActive={isScannerActive} onScan={onScan} onError={onScanError} />
@@ -47,6 +56,9 @@ const CheckinView = ({
           </p>
         </div>
       </div>
+      {!isCheckinAllowed && (
+        <div className="empty">Drop-off and pick-up are available on Sundays only.</div>
+      )}
       <div className="form">
         <label>
           Search child name
@@ -55,6 +67,7 @@ const CheckinView = ({
             value={searchTerm}
             onChange={onSearchChange}
             placeholder="Type a child name"
+            disabled={!isCheckinAllowed}
           />
         </label>
       </div>
@@ -87,11 +100,19 @@ const CheckinView = ({
                   )}
                 </div>
                 {child.lastStatus === 'sign_in' ? (
-                  <button type="button" onClick={() => requestSignOut(child)}>
+                  <button
+                    type="button"
+                    onClick={() => requestSignOut(child)}
+                    disabled={!isCheckinAllowed}
+                  >
                     Sign out
                   </button>
                 ) : (
-                  <button type="button" onClick={() => requestSignIn(child)}>
+                  <button
+                    type="button"
+                    onClick={() => requestSignIn(child)}
+                    disabled={!isCheckinAllowed}
+                  >
                     Sign in
                   </button>
                 )}
@@ -114,14 +135,14 @@ const CheckinView = ({
         <div className="empty">No children are signed in yet.</div>
       ) : (
         <ul className="list">
-            {signedInChildren.map((child) => (
+          {signedInChildren.map((child) => (
             <li
               key={child.id}
-                className={`list__item list__item--clickable${
-                  child.dateOfBirth && isBirthdayToday(child.dateOfBirth)
-                    ? ' list__item--birthday'
-                    : ''
-                }`}
+              className={`list__item list__item--clickable${
+                child.dateOfBirth && isBirthdayToday(child.dateOfBirth)
+                  ? ' list__item--birthday'
+                  : ''
+              }`}
               onClick={() => onSelectChild(child)}
               role="button"
               tabIndex={0}

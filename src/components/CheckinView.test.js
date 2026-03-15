@@ -20,6 +20,7 @@ describe('CheckinView', () => {
         scanNotice=""
         onScan={jest.fn()}
         onScanError={jest.fn()}
+        isCheckinAllowed
       />
     );
 
