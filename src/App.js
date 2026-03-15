@@ -443,8 +443,8 @@ function App() {
     const derivedAge = getAgeFromDob(dateOfBirth);
     const derivedClassCategory = getClassCategory(derivedAge);
     const parsedAge = Number.parseInt(derivedAge, 10);
-    if (!Number.isNaN(parsedAge) && parsedAge >= 13) {
-      setError('Children aged 13 and above should register in Celeb Teens. Please inform the parent.');
+    if (!Number.isNaN(parsedAge) && parsedAge > 19) {
+      setError('Ages 20 and above cannot be registered.');
       setSupabaseStatus('');
       return;
     }
@@ -561,8 +561,8 @@ function App() {
     const derivedAge = getAgeFromDob(dateOfBirth);
     const derivedClassCategory = getClassCategory(derivedAge);
     const parsedAge = Number.parseInt(derivedAge, 10);
-    if (!Number.isNaN(parsedAge) && parsedAge >= 13) {
-      setError('Children aged 13 and above should register in Celeb Teens. Please inform the parent.');
+    if (!Number.isNaN(parsedAge) && parsedAge > 19) {
+      setError('Ages 20 and above cannot be registered. Ages 13-19 should register in Celeb Teens.');
       setSupabaseStatus('');
       return;
     }
