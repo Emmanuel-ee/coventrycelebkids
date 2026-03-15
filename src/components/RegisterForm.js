@@ -1,4 +1,9 @@
 import React from 'react';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+
+const toDateValue = (value) => (value ? new Date(value) : null);
+const toIsoDate = (value) => (value ? value.toISOString().split('T')[0] : '');
 
 const RegisterForm = ({
   childForm,
@@ -33,14 +38,28 @@ const RegisterForm = ({
       </label>
       <label>
         Date of birth
-        <input
-          type="date"
-          className="dob-picker"
-          name="dateOfBirth"
-          value={childForm.dateOfBirth}
-          onChange={onChange}
-          max={new Date().toISOString().split('T')[0]}
-        />
+        <div className="dob-picker">
+          <DatePicker
+            selected={toDateValue(childForm.dateOfBirth)}
+            onChange={(date) =>
+              onChange({
+                target: {
+                  name: 'dateOfBirth',
+                  value: toIsoDate(date),
+                  type: 'text',
+                },
+              })
+            }
+            maxDate={new Date()}
+            placeholderText="Select date"
+            showMonthDropdown
+            showYearDropdown
+            dropdownMode="select"
+            isClearable
+            shouldCloseOnSelect
+          />
+        </div>
+        <span className="helper">Tap to open the calendar and choose a date.</span>
         {getClassCategory(getAgeFromDob(childForm.dateOfBirth)) && (
           <span className="helper">
             Class: {getClassCategory(getAgeFromDob(childForm.dateOfBirth))}

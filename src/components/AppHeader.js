@@ -18,10 +18,10 @@ const AppHeader = ({
         >
           <img
             src={`${process.env.PUBLIC_URL}/logo/Asset%20203.svg`}
-            alt="Coventry Celebkids"
+            alt="Coventry Celebkids & Celeb Teens"
             className="app__logo"
           />
-          Coventry Celebkids
+          Coventry Celebkids & Celeb Teens
         </button>
         <p className="app__eyebrow">In Christ For Christ With Joy</p>
       </h1>

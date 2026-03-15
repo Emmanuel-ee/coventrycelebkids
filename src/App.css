@@ -143,6 +143,12 @@ body {
   width: 100%;
 }
 
+.dob-picker .react-datepicker-wrapper,
+.dob-picker .react-datepicker__input-container,
+.dob-picker .react-datepicker__input-container input {
+  width: 100%;
+}
+
 .button--primary {
   font-size: 16px;
   padding: 14px 18px;
