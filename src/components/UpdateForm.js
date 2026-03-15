@@ -22,8 +22,8 @@ const UpdateForm = ({
         <h2>Update child details</h2>
         <p className="card__subtitle">Add new information or request updates.</p>
       </div>
-      <button className="ghost" type="button" onClick={onBack}>
-        Back
+      <button className="ghost back-arrow" type="button" onClick={onBack} aria-label="Back">
+        ←
       </button>
     </div>
     <form className="form" onSubmit={onSubmit}>

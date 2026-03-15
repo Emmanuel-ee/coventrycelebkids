@@ -166,11 +166,29 @@ body {
   border-color: #1d2b53;
 }
 
+.back-arrow {
+  font-size: 24px;
+  line-height: 1;
+  padding: 6px 14px;
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
 .card__header {
   display: flex;
   flex-direction: column;
   gap: 12px;
   margin-bottom: 16px;
+}
+
+.card__header--back {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 12px;
 }
 
 .card__subtitle {

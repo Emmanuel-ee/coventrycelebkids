@@ -14,17 +14,18 @@ const RegisterForm = ({
   getAgeFromDob,
   onBack,
 }) => (
-  <section className="card">
-    <div className="card__header">
+  <>
+    <button className="ghost back-arrow" type="button" onClick={onBack} aria-label="Back">
+      ←
+    </button>
+    <section className="card">
+      <div className="card__header">
       <div>
         <h2>Register a child</h2>
         <p className="card__subtitle">Complete the form to save the record.</p>
       </div>
-      <button className="ghost" type="button" onClick={onBack}>
-        Back
-      </button>
-    </div>
-    <form className="form" onSubmit={onSubmit}>
+      </div>
+      <form className="form" onSubmit={onSubmit}>
       <label>
         Child's name
         <input
@@ -159,8 +160,9 @@ const RegisterForm = ({
         />
       </label>
       <button type="submit">Register child</button>
-    </form>
-  </section>
+      </form>
+    </section>
+  </>
 );
 
 export default RegisterForm;

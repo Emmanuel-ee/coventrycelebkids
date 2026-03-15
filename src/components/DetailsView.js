@@ -33,8 +33,8 @@ const DetailsView = ({
         <p className="card__subtitle">Here are the child details.</p>
       </div>
       <div className="button-row">
-        <button className="ghost" type="button" onClick={onBack}>
-          Drop-off / Pick up
+        <button className="ghost back-arrow" type="button" onClick={onBack} aria-label="Back">
+          ←
         </button>
         <button className="ghost" type="button" onClick={onGoHome}>
           Home
