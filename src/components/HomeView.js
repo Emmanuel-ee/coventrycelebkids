@@ -28,7 +28,7 @@ const HomeView = ({
       <div className="home-hero" style={{marginBottom: 16}}>
         <h2 style={{fontWeight: 700, fontSize: '2rem', marginBottom: 8}}>Welcome!</h2>
         <p className="home-hero__text" style={{fontSize: '1.1rem', color: '#475467'}}>
-          Register your child to get started. You can drop-off and pick-up using QR codes.
+          Register your child to get started. You can drop-off and pick-up your child by scanning their unique QR codes from the instructors.
         </p>
       </div>
       <button
