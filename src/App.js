@@ -778,6 +778,7 @@ function App() {
       });
       if (action === 'sign_in') {
         setView('details');
+        setIsScannerActive(false); // Extra safeguard to turn off camera
         if (result.success) {
           setSignedInChildId(child.id);
         }

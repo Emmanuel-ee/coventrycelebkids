@@ -1,7 +1,13 @@
 
+// import React from 'react';
+// import QrScanner from './QrScanner';
+
 import React from 'react';
 import QrScanner from './QrScanner';
 
+/**
+ * Header for the check-in card, with camera toggle.
+ */
 function CheckinHeader({ isScannerActive, onToggleScanner, isCheckinAllowed }) {
   return (
     <div className="card__header">
@@ -23,6 +29,9 @@ function CheckinHeader({ isScannerActive, onToggleScanner, isCheckinAllowed }) {
   );
 }
 
+/**
+ * Section for the QR scanner and scan notice.
+ */
 function ScannerSection({ isScannerActive, onScan, onScanError, scanNotice }) {
   if (!isScannerActive) return null;
   return (
@@ -33,6 +42,9 @@ function ScannerSection({ isScannerActive, onScan, onScanError, scanNotice }) {
   );
 }
 
+/**
+ * Main check-in view: camera toggle, QR scanner, and scan notice.
+ */
 function CheckinView({
   isScannerActive,
   onToggleScanner,

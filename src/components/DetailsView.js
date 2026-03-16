@@ -119,15 +119,19 @@ const DetailsView = ({
         </button>
       )}
     </div>
-    <div className="divider" />
-    <div className="qr-section">
-      <h3>Child QR code</h3>
-      <p className="card__subtitle">Scan to sign in or sign out this child.</p>
-      <div className="qr-card">
-        <QRCodeCanvas value={qrCodeValue} size={160} includeMargin />
-      </div>
-    </div>
-    <div className="divider" />
+    {selectedChild.lastStatus !== 'sign_in' && (
+      <>
+        <div className="divider" />
+        <div className="qr-section">
+          <h3>Child QR code</h3>
+          <p className="card__subtitle">Scan to sign in or sign out this child.</p>
+          <div className="qr-card">
+            <QRCodeCanvas value={qrCodeValue} size={160} includeMargin />
+          </div>
+        </div>
+        <div className="divider" />
+      </>
+    )}
     <div className="message-section">
       <h3>Messages</h3>
       <p className="card__subtitle">Recent notes for this child.</p>
