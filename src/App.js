@@ -38,7 +38,6 @@ import useAnnouncements from './hooks/useAnnouncements';
 import useChildMessages from './hooks/useChildMessages';
 import useDraftStorage from './hooks/useDraftStorage';
 
-const isSunday = () => new Date().getDay() === 0;
 
 function App() {
   const [children, setChildren] = React.useState(() =>
@@ -53,7 +52,6 @@ function App() {
   const [supabaseStatus, setSupabaseStatus] = React.useState('');
   const [view, setView] = React.useState('home');
   const [updateNotice, setUpdateNotice] = React.useState('');
-  const [searchTerm, setSearchTerm] = React.useState('');
   const [selectedChild, setSelectedChild] = React.useState(null);
   const [confirmAction, setConfirmAction] = React.useState(null);
   const [pendingScanId, setPendingScanId] = React.useState('');
@@ -64,7 +62,6 @@ function App() {
   );
   const [authUserId, setAuthUserId] = React.useState('');
   const isStartingAuthRef = React.useRef(false);
-  const checkinAllowed = isSunday();
   const birthdayAlertsRef = React.useRef(new Set());
   const lastScanRef = React.useRef({ value: '', timestamp: 0 });
   const [selectedAnnouncement, setSelectedAnnouncement] = React.useState(null);
@@ -659,10 +656,6 @@ function App() {
   const recordCheckin = React.useCallback(async (child, action, timestamp) => {
     const actionTimestamp = timestamp || new Date().toISOString();
 
-    if (!isSunday()) {
-      setError('Drop-off and pick-up are available on Sundays only.');
-      return { success: false };
-    }
 
     if (isSupabaseEnabled && !authUserId) {
       setError('Start a secure session before signing in or out.');
@@ -763,12 +756,6 @@ function App() {
       return;
     }
 
-    if (!isSunday()) {
-      setError('Drop-off and pick-up are available on Sundays only.');
-      setScanNotice('Check-in is available on Sundays only.');
-      setPendingScanId('');
-      return;
-    }
 
     const child = children.find(
       (record) => record.qrCode === pendingScanId || record.id === pendingScanId
@@ -783,14 +770,20 @@ function App() {
     const action = child.lastStatus === 'sign_in' ? 'sign_out' : 'sign_in';
     const handleScan = async () => {
       setIsScannerActive(false);
-      setSelectedChild(child);
       const result = await recordCheckin(child, action);
-      if (result.success) {
+      setSelectedChild({
+        ...child,
+        lastStatus: action,
+        lastActionAt: result.timestamp || new Date().toISOString(),
+      });
+      if (action === 'sign_in') {
         setView('details');
-        if (action === 'sign_in') {
+        if (result.success) {
           setSignedInChildId(child.id);
         }
-        if (action === 'sign_out' && signedInChildId === child.id) {
+      } else if (action === 'sign_out') {
+        setView('checkin');
+        if (result.success && signedInChildId === child.id) {
           setSignedInChildId('');
         }
       }
@@ -890,34 +883,13 @@ function App() {
       setScanNotice('We could not read that QR code. Try again.');
       return;
     }
-    setScanNotice('QR code captured. Checking the child record...');
-    setPendingScanId(scanId);
+  setScanNotice('QR code captured. Checking the child record...');
+  setIsScannerActive(false); // Always turn off camera after scan
+  setPendingScanId(scanId);
   };
 
 
-  const filteredChildren = children.filter((child) => {
-    const term = searchTerm.trim().toLowerCase();
-    if (!term) {
-      return false;
-    }
-    if (
-      child.lastStatus === 'sign_in'
-      && child.signedInUserId
-      && child.signedInUserId !== authUserId
-    ) {
-      return false;
-    }
-    return [child.name]
-      .filter(Boolean)
-      .some((value) => value.toLowerCase().includes(term));
-  });
 
-  const signedInChildren = children.filter(
-    (child) => child.signedIn || child.lastStatus === 'sign_in'
-  );
-  const scopedSignedInChildren = signedInChildId
-    ? signedInChildren.filter((child) => child.id === signedInChildId)
-    : [];
   const canViewDetails =
     selectedChild
     && (!isSupabaseEnabled
@@ -956,16 +928,42 @@ function App() {
       />
       <main className="app__grid">
         {view === 'home' && (
-          <HomeView
-            isLoading={isLoading}
-            onRegister={() => setView('register')}
-            onCheckin={() => setView('checkin')}
-            announcements={announcements}
-            announcementsStatus={announcementsStatus}
-            birthdayChildren={birthdayChildren}
-            onSelectAnnouncement={setSelectedAnnouncement}
-            truncateMessage={truncateMessage}
-          />
+          <>
+            <HomeView
+              isLoading={isLoading}
+              onRegister={() => setView('register')}
+              onCheckin={() => setView('checkin')}
+              announcements={announcements}
+              announcementsStatus={announcementsStatus}
+              birthdayChildren={birthdayChildren}
+              onSelectAnnouncement={setSelectedAnnouncement}
+              truncateMessage={truncateMessage}
+            />
+            {signedInChildId && (() => {
+              const child = children.find((c) => c.id === signedInChildId);
+              if (!child) return null;
+              return (
+                <section className="card" style={{ marginTop: 24 }}>
+                  <div className="card__header">
+                    <div>
+                      <h2>Signed-in child</h2>
+                      <p className="card__subtitle">You have signed in this child. Tap to view details.</p>
+                    </div>
+                  </div>
+                  <div
+                    className="list__item list__item--clickable"
+                    style={{ cursor: 'pointer', padding: 16, border: '1px solid #eee', borderRadius: 8 }}
+                    onClick={() => { setSelectedChild(child); setView('details'); }}
+                  >
+                    <h3>{child.name}</h3>
+                    {child.classCategory && <p className="list__notes">Class: {child.classCategory}</p>}
+                    {child.guardianContact && <p className="list__notes">Contact: {child.guardianContact}</p>}
+                    {child.lastStatus && <p className="list__notes">Status: {child.lastStatus === 'sign_in' ? 'Signed in' : 'Signed out'}</p>}
+                  </div>
+                </section>
+              );
+            })()}
+          </>
         )}
 
         {view === 'register' && (
@@ -995,28 +993,43 @@ function App() {
         )}
 
         {view === 'checkin' && (
-          <CheckinView
-            searchTerm={searchTerm}
-            onSearchChange={(event) => setSearchTerm(event.target.value)}
-            filteredChildren={filteredChildren}
-            signedInChildren={scopedSignedInChildren}
-            requestSignIn={requestSignIn}
-            requestSignOut={requestSignOut}
-            onSelectChild={(child) => {
-              setSelectedChild(child);
-              setView('details');
-            }}
-            isBirthdayToday={isBirthdayToday}
-            isScannerActive={isScannerActive}
-            onToggleScanner={handleScannerToggle}
-            scanNotice={scanNotice}
-            onScan={handleScanResult}
-            onScanError={handleScannerError}
-            isCheckinAllowed={checkinAllowed}
-          />
+          <>
+            <CheckinView
+              isScannerActive={isScannerActive}
+              onToggleScanner={handleScannerToggle}
+              scanNotice={scanNotice}
+              onScan={handleScanResult}
+              onScanError={handleScannerError}
+              isCheckinAllowed={true}
+            />
+            {signedInChildId && (() => {
+              const child = children.find((c) => c.id === signedInChildId);
+              if (!child) return null;
+              return (
+                <section className="card" style={{ marginTop: 24 }}>
+                  <div className="card__header">
+                    <div>
+                      <h2>Signed-in child</h2>
+                      <p className="card__subtitle">You have signed in this child. Tap to view details.</p>
+                    </div>
+                  </div>
+                  <div
+                    className="list__item list__item--clickable"
+                    style={{ cursor: 'pointer', padding: 16, border: '1px solid #eee', borderRadius: 8 }}
+                    onClick={() => { setSelectedChild(child); setView('details'); }}
+                  >
+                    <h3>{child.name}</h3>
+                    {child.classCategory && <p className="list__notes">Class: {child.classCategory}</p>}
+                    {child.guardianContact && <p className="list__notes">Contact: {child.guardianContact}</p>}
+                    {child.lastStatus && <p className="list__notes">Status: {child.lastStatus === 'sign_in' ? 'Signed in' : 'Signed out'}</p>}
+                  </div>
+                </section>
+              );
+            })()}
+          </>
         )}
 
-        {view === 'details' && selectedChild && canViewDetails && (
+        {view === 'details' && selectedChild && selectedChild.id === signedInChildId && (
           <DetailsView
             selectedChild={selectedChild}
             onBack={() => setView('checkin')}
@@ -1035,6 +1048,11 @@ function App() {
             onTyping={broadcastTyping}
             onArchiveMessage={archiveMessage}
             qrCodeValue={qrCodeValue}
+            onGoToScanner={() => {
+              setView('checkin');
+              setTimeout(() => setIsScannerActive(true), 100);
+              setScanNotice('Scan the QR code to sign out.');
+            }}
           />
         )}
       </main>
@@ -1043,6 +1061,11 @@ function App() {
         onConfirm={handleConfirmAction}
         onCancel={handleCancelAction}
       />
+      {supabaseStatus && supabaseStatus.includes('signed out') && (
+        <div className="scan-notice" style={{textAlign:'center',margin:'1em auto',maxWidth:400,background:'#e6ffe6',border:'1px solid #b2f2b2',borderRadius:8,padding:'1em',fontWeight:600}}>
+          Child signed out successfully.
+        </div>
+      )}
       <AnnouncementModal
         selectedAnnouncement={selectedAnnouncement}
         onClose={() => setSelectedAnnouncement(null)}

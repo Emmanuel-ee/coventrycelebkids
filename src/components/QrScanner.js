@@ -47,7 +47,9 @@ const QrScanner = ({ isActive, onScan, onError }) => {
 
     return () => {
       isCancelled = true;
-      codeReader.reset();
+      if (typeof codeReader.destroy === 'function') {
+        codeReader.destroy();
+      }
     };
   }, [isActive, onScan, onError, shouldIgnoreError]);
 

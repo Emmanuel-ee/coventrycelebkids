@@ -19,6 +19,7 @@ const DetailsView = ({
   onTyping,
   onArchiveMessage,
   qrCodeValue,
+  onGoToScanner,
 }) => (
   <section
     className={`card${
@@ -30,7 +31,6 @@ const DetailsView = ({
     <div className="card__header">
       <div>
         <h2>{selectedChild.name}</h2>
-        <p className="card__subtitle">Here are the child details.</p>
       </div>
       <div className="button-row">
         <button className="ghost back-arrow" type="button" onClick={onBack} aria-label="Back">
@@ -110,8 +110,8 @@ const DetailsView = ({
         Update details
       </button>
       {selectedChild.lastStatus === 'sign_in' ? (
-        <button type="button" onClick={() => requestSignOut(selectedChild)}>
-          Sign out
+        <button type="button" onClick={() => onGoToScanner && onGoToScanner()}>
+          Sign out (Scan QR)
         </button>
       ) : (
         <button type="button" onClick={() => requestSignIn(selectedChild)}>

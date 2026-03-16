@@ -1,178 +1,61 @@
+
 import React from 'react';
 import QrScanner from './QrScanner';
 
-const CheckinView = ({
-  searchTerm,
-  onSearchChange,
-  filteredChildren,
-  signedInChildren,
-  requestSignIn,
-  requestSignOut,
-  onSelectChild,
-  isBirthdayToday,
+function CheckinHeader({ isScannerActive, onToggleScanner, isCheckinAllowed }) {
+  return (
+    <div className="card__header">
+      <div>
+        <h2>Drop-off &amp; Pick-up</h2>
+        <p className="card__subtitle">
+          Use the camera to scan a child QR code to sign in or out. Manual search is disabled.
+        </p>
+      </div>
+      <button
+        type="button"
+        className="ghost"
+        onClick={onToggleScanner}
+        disabled={!isCheckinAllowed}
+      >
+        {isScannerActive ? 'Stop camera' : 'Open camera'}
+      </button>
+    </div>
+  );
+}
+
+function ScannerSection({ isScannerActive, onScan, onScanError, scanNotice }) {
+  if (!isScannerActive) return null;
+  return (
+    <>
+      <QrScanner isActive={isScannerActive} onScan={onScan} onError={onScanError} />
+      {scanNotice && <p className="scan-notice">{scanNotice}</p>}
+    </>
+  );
+}
+
+function CheckinView({
   isScannerActive,
   onToggleScanner,
   scanNotice,
   onScan,
   onScanError,
   isCheckinAllowed,
-}) => (
-  <>
+}) {
+  return (
     <section className="card">
-      <div className="card__header">
-        <div>
-          <h2>Scan QR code</h2>
-          <p className="card__subtitle">
-            Use the camera to scan a child QR code and toggle sign-in/out.
-          </p>
-        </div>
-        <button
-          type="button"
-          className="ghost"
-          onClick={onToggleScanner}
-          disabled={!isCheckinAllowed}
-        >
-          {isScannerActive ? 'Stop camera' : 'Open camera'}
-        </button>
-      </div>
-      {!isCheckinAllowed && (
-        <p className="scan-notice">Check-in is available on Sundays only.</p>
-      )}
-      {isScannerActive ? (
-        <>
-          <QrScanner isActive={isScannerActive} onScan={onScan} onError={onScanError} />
-          {scanNotice && <p className="scan-notice">{scanNotice}</p>}
-        </>
-      ) : (
-        <p className="scan-helper">Camera stays off until you open it.</p>
-      )}
+      <CheckinHeader
+        isScannerActive={isScannerActive}
+        onToggleScanner={onToggleScanner}
+        isCheckinAllowed={isCheckinAllowed}
+      />
+      <ScannerSection
+        isScannerActive={isScannerActive}
+        onScan={onScan}
+        onScanError={onScanError}
+        scanNotice={scanNotice}
+      />
     </section>
-    <section className="card">
-      <div className="card__header">
-        <div>
-          <h2>Drop off / Pick up</h2>
-          <p className="card__subtitle">
-            Search by name and sign in at drop-off.
-          </p>
-        </div>
-      </div>
-      {!isCheckinAllowed && (
-        <div className="empty">Drop-off and pick-up are available on Sundays only.</div>
-      )}
-      <div className="form">
-        <label>
-          Search child name
-          <input
-            type="search"
-            value={searchTerm}
-            onChange={onSearchChange}
-            placeholder="Type a child name"
-            disabled={!isCheckinAllowed}
-          />
-        </label>
-      </div>
-      {searchTerm.trim() ? (
-        filteredChildren.length === 0 ? (
-          <div className="empty">No matching children found.</div>
-        ) : (
-          <ul className="list">
-            {filteredChildren.map((child) => (
-              <li
-                key={child.id}
-                className={`list__item${
-                  child.dateOfBirth && isBirthdayToday(child.dateOfBirth)
-                    ? ' list__item--birthday'
-                    : ''
-                }`}
-              >
-                <div>
-                  <h3>{child.name}</h3>
-                  {child.classCategory && (
-                    <p className="list__notes">Class: {child.classCategory}</p>
-                  )}
-                  {child.guardianContact && (
-                    <p className="list__notes">Contact: {child.guardianContact}</p>
-                  )}
-                  {child.lastStatus && (
-                    <p className="list__notes">
-                      Status: {child.lastStatus === 'sign_in' ? 'Signed in' : 'Signed out'}
-                    </p>
-                  )}
-                </div>
-                {child.lastStatus === 'sign_in' ? (
-                  <button
-                    type="button"
-                    onClick={() => requestSignOut(child)}
-                    disabled={!isCheckinAllowed}
-                  >
-                    Sign out
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => requestSignIn(child)}
-                    disabled={!isCheckinAllowed}
-                  >
-                    Sign in
-                  </button>
-                )}
-              </li>
-            ))}
-          </ul>
-        )
-      ) : (
-        <div className="empty">Start typing to find a child.</div>
-      )}
-    </section>
-    <section className="card">
-      <div className="card__header">
-        <div>
-          <h2>Signed-in children</h2>
-          <p className="card__subtitle">{signedInChildren.length} currently signed in</p>
-        </div>
-      </div>
-      {signedInChildren.length === 0 ? (
-        <div className="empty">No children are signed in yet.</div>
-      ) : (
-        <ul className="list">
-          {signedInChildren.map((child) => (
-            <li
-              key={child.id}
-              className={`list__item list__item--clickable${
-                child.dateOfBirth && isBirthdayToday(child.dateOfBirth)
-                  ? ' list__item--birthday'
-                  : ''
-              }`}
-              onClick={() => onSelectChild(child)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  onSelectChild(child);
-                }
-              }}
-            >
-              <div>
-                <h3>{child.name}</h3>
-                {child.classCategory && (
-                  <p className="list__notes">Class: {child.classCategory}</p>
-                )}
-                {child.guardianContact && (
-                  <p className="list__notes">Contact: {child.guardianContact}</p>
-                )}
-                {child.lastStatus && (
-                  <p className="list__notes">
-                    Last: {child.lastStatus === 'sign_in' ? 'Signed in' : 'Signed out'}
-                    {child.lastActionAt ? ` • ${new Date(child.lastActionAt).toLocaleString()}` : ''}
-                  </p>
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
-  </>
-);
+  );
+}
 
 export default CheckinView;
