@@ -1,7 +1,3 @@
-
-// import React from 'react';
-// import QrScanner from './QrScanner';
-
 import React from 'react';
 import QrScanner from './QrScanner';
 

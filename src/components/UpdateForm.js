@@ -75,21 +75,8 @@ const UpdateForm = ({
           <option value="">Select</option>
           <option value="Female">Female</option>
           <option value="Male">Male</option>
-          <option value="Other">Other</option>
         </select>
       </label>
-      {updateForm.sex === 'Other' && (
-        <label>
-          Specify sex
-          <input
-            type="text"
-            name="sexOther"
-            value={updateForm.sexOther}
-            onChange={onChange}
-            placeholder="Type here"
-          />
-        </label>
-      )}
       <label>
         Guardian name
         <input

@@ -15,8 +15,7 @@ const buildFormFromChild = (child, knownAllergies) => {
   return {
     name: child.name || '',
     dateOfBirth: child.dateOfBirth || '',
-    sex: isStandardSex ? (normalizedSex === 'female' ? 'Female' : 'Male') : child.sex ? 'Other' : '',
-    sexOther: isStandardSex ? '' : child.sex || '',
+    sex: isStandardSex ? (normalizedSex === 'female' ? 'Female' : 'Male') : '',
     guardianName: child.guardianName || '',
     guardianContact: child.guardianContact || '',
     allergiesSelection,

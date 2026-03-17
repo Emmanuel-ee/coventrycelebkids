@@ -65,23 +65,36 @@ function App() {
   const birthdayAlertsRef = React.useRef(new Set());
   const lastScanRef = React.useRef({ value: '', timestamp: 0 });
   const [selectedAnnouncement, setSelectedAnnouncement] = React.useState(null);
-  const [childForm, setChildForm] = useDraftStorage(DRAFT_KEY, {
-    name: '',
-    dateOfBirth: '',
-    sex: '',
-    sexOther: '',
-    guardianName: '',
-    guardianContact: '',
-    allergiesSelection: '',
-    allergiesOther: '',
-    allowPhotos: false,
-    notes: '',
-  });
+  const emptyChildForm = React.useMemo(
+    () => ({
+      name: '',
+      dateOfBirth: '',
+      sex: '',
+      guardianName: '',
+      guardianContact: '',
+      allergiesSelection: '',
+      allergiesOther: '',
+      allowPhotos: false,
+      notes: '',
+    }),
+    []
+  );
+  const [childForms, setChildForms] = useDraftStorage(DRAFT_KEY, [emptyChildForm]);
+  const [focusedChildIndex, setFocusedChildIndex] = React.useState(0);
+
+  React.useEffect(() => {
+    if (!Array.isArray(childForms)) {
+      const normalizedForms = childForms && typeof childForms === 'object'
+        ? [childForms]
+        : [emptyChildForm];
+      setChildForms(normalizedForms);
+      setFocusedChildIndex(0);
+    }
+  }, [childForms, emptyChildForm, setChildForms]);
   const [updateForm, setUpdateForm] = React.useState({
     name: '',
     dateOfBirth: '',
     sex: '',
-    sexOther: '',
     guardianName: '',
     guardianContact: '',
     allergiesSelection: '',
@@ -390,13 +403,39 @@ function App() {
     }
   }, [authUserId]);
 
-  const handleChildChange = (event) => {
+  const handleChildChange = (index, event) => {
     const { name, value, type, checked } = event.target;
     setError('');
-    setChildForm((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
+    setChildForms((prev) =>
+      prev.map((form, formIndex) =>
+        formIndex === index
+          ? {
+            ...form,
+            [name]: type === 'checkbox' ? checked : value,
+          }
+          : form
+      )
+    );
+  };
+
+  const handleAddAnotherChild = () => {
+    setChildForms((prev) => {
+      const nextForms = [...prev, { ...emptyChildForm }];
+      setFocusedChildIndex(nextForms.length - 1);
+      return nextForms;
+    });
+  };
+
+  const handleRemoveChild = (index) => {
+    setChildForms((prev) => {
+      if (prev.length === 1) {
+        return prev;
+      }
+      const nextForms = prev.filter((_, formIndex) => formIndex !== index);
+      const nextFocus = Math.min(index, nextForms.length - 1);
+      setFocusedChildIndex(nextFocus);
+      return nextForms;
+    });
   };
 
   const handleUpdateChange = (event) => {
@@ -417,106 +456,131 @@ function App() {
   const handleAddChild = async (event) => {
     event.preventDefault();
     setError('');
-    if (!childForm.name.trim()) {
-      setError("Child's name is required.");
-      return;
-    }
-    if (!childForm.sex) {
-      setError("Please select the child's sex.");
-      return;
-    }
-    const guardianContact = childForm.guardianContact.trim();
-    if (!guardianContact) {
-      setError('Guardian contact is required.');
-      return;
-    }
-    if (!isValidGuardianContact(guardianContact)) {
-      setError('Guardian contact must be 11 digits, or use a + prefix for longer numbers.');
-      return;
-    }
-    if (childForm.sex === 'Other' && !childForm.sexOther.trim()) {
-      setError('Please specify the sex when selecting Other.');
-      return;
-    }
-    const dateOfBirth = childForm.dateOfBirth;
-    const derivedAge = getAgeFromDob(dateOfBirth);
-    const derivedClassCategory = getClassCategory(derivedAge);
-    const parsedAge = Number.parseInt(derivedAge, 10);
-    if (!Number.isNaN(parsedAge) && parsedAge > 19) {
-      setError('Ages 20 and above cannot be registered.');
-      setSupabaseStatus('');
-      return;
-    }
-    const formSex = childForm.sex === 'Other' ? childForm.sexOther.trim() : childForm.sex;
-    const existingChild = children.find((child) =>
-      normalizeValue(child.name) === normalizeValue(childForm.name)
-      && normalizeValue(child.sex) === normalizeValue(formSex)
-      && normalizeValue(child.guardianContact) === normalizeValue(childForm.guardianContact)
-    );
-    const matchesRegistrationDetails = existingChild
-      && normalizeValue(existingChild.dateOfBirth) === normalizeValue(dateOfBirth)
-      && normalizeValue(existingChild.guardianName) === normalizeValue(childForm.guardianName)
-      && normalizeValue(existingChild.classCategory) === normalizeValue(derivedClassCategory);
-    if (existingChild) {
-      setError(
-        matchesRegistrationDetails
-          ? 'This child is already registered. Please sign in and use Update Details if you need to add new information.'
-          : 'A child with this name is already registered. Please sign in and use Update Details if you need to add new information.'
+
+    const preparedChildren = [];
+  const uniqueKeys = new Set();
+
+    for (let index = 0; index < childForms.length; index += 1) {
+      const form = childForms[index];
+      const isEmpty =
+        !form.name.trim()
+        && !form.guardianContact.trim()
+        && !form.sex
+        && !form.dateOfBirth
+        && !form.guardianName.trim()
+        && !form.allergiesSelection
+        && !form.notes.trim()
+        && !form.allowPhotos;
+
+      if (isEmpty) {
+        continue;
+      }
+
+      if (!form.name.trim()) {
+        setError(`Child ${index + 1}: Child's name is required.`);
+        return;
+      }
+      if (!form.sex) {
+        setError(`Child ${index + 1}: Please select the child's sex.`);
+        return;
+      }
+      const guardianContact = form.guardianContact.trim();
+      if (!guardianContact) {
+        setError(`Child ${index + 1}: Guardian contact is required.`);
+        return;
+      }
+      if (!isValidGuardianContact(guardianContact)) {
+        setError(
+          `Child ${index + 1}: Guardian contact must be 11 digits, or use a + prefix for longer numbers.`
+        );
+        return;
+      }
+
+      const dateOfBirth = form.dateOfBirth;
+      const derivedAge = getAgeFromDob(dateOfBirth);
+      const derivedClassCategory = getClassCategory(derivedAge);
+      const parsedAge = Number.parseInt(derivedAge, 10);
+      if (!Number.isNaN(parsedAge) && parsedAge > 19) {
+        setError(`Child ${index + 1}: Ages 20 and above cannot be registered.`);
+        setSupabaseStatus('');
+        return;
+      }
+
+      const normalizedName = normalizeValue(form.name);
+  const normalizedGuardianContact = normalizeValue(guardianContact);
+  const normalizedGuardianName = normalizeValue(form.guardianName);
+  const guardianKey = `${normalizedGuardianName || 'no-guardian'}-${normalizedGuardianContact || 'no-contact'}-${normalizedName}`;
+      if (uniqueKeys.has(guardianKey)) {
+        setError(`Child ${index + 1}: This child name is listed more than once for the same guardian.`);
+        return;
+      }
+      uniqueKeys.add(guardianKey);
+
+      const existingChild = children.find((child) =>
+        normalizeValue(child.name) === normalizedName
+        && normalizeValue(child.guardianContact) === normalizedGuardianContact
+        && normalizeValue(child.guardianName) === normalizedGuardianName
       );
-      setSupabaseStatus('');
-      return;
+      const matchesRegistrationDetails = existingChild
+        && normalizeValue(existingChild.dateOfBirth) === normalizeValue(dateOfBirth)
+        && normalizeValue(existingChild.guardianName) === normalizeValue(form.guardianName)
+        && normalizeValue(existingChild.classCategory) === normalizeValue(derivedClassCategory);
+      if (existingChild) {
+        setError(
+          matchesRegistrationDetails
+            ? `Child ${index + 1}: This child name is already registered for the same guardian. Please sign in and use Update Details if you need to add new information.`
+            : `Child ${index + 1}: A child with this name is already registered for the same guardian. Please sign in and use Update Details if you need to add new information.`
+        );
+        setSupabaseStatus('');
+        return;
+      }
+
+      preparedChildren.push({
+        id: createId(),
+        qrCode: createId(),
+        name: form.name.trim(),
+        age: derivedAge,
+        dateOfBirth,
+  sex: form.sex,
+        guardianName: form.guardianName.trim(),
+        guardianContact,
+        allergies:
+          form.allergiesSelection === 'Other'
+            ? form.allergiesOther.trim()
+            : form.allergiesSelection.trim(),
+        classCategory: derivedClassCategory,
+        allowPhotos: form.allowPhotos,
+        notes: form.notes.trim(),
+        createdAt: new Date().toISOString(),
+        lastStatus: '',
+        lastActionAt: '',
+      });
     }
 
-    const newChild = {
-      id: createId(),
-      qrCode: createId(),
-      name: childForm.name.trim(),
-      age: derivedAge,
-      dateOfBirth,
-      sex: formSex,
-      guardianName: childForm.guardianName.trim(),
-      guardianContact: childForm.guardianContact.trim(),
-      allergies:
-        childForm.allergiesSelection === 'Other'
-          ? childForm.allergiesOther.trim()
-          : childForm.allergiesSelection.trim(),
-      classCategory: derivedClassCategory,
-      allowPhotos: childForm.allowPhotos,
-      notes: childForm.notes.trim(),
-      createdAt: new Date().toISOString(),
-      lastStatus: '',
-      lastActionAt: '',
-    };
+    if (preparedChildren.length === 0) {
+      setError('Please complete at least one child form before submitting.');
+      return;
+    }
 
     if (isSupabaseEnabled) {
       setError('');
       setSupabaseStatus('');
       const { error: insertError } = await supabase
         .from('children')
-        .insert([mapChildToDb(newChild)]);
+        .insert(preparedChildren.map(mapChildToDb));
       if (insertError) {
         setError(`Unable to register child. ${insertError.message}`);
         return;
       }
-      setSupabaseStatus('Child registered in Supabase.');
+      setSupabaseStatus('Children registered in Supabase.');
     }
 
-    setChildren((prev) => [newChild, ...prev]);
+    setChildren((prev) => [...preparedChildren, ...prev]);
     if (!isSupabaseEnabled) {
-      setSupabaseStatus('Child registered locally.');
+      setSupabaseStatus('Children registered locally.');
     }
-    setChildForm({
-      name: '',
-  dateOfBirth: '',
-      sex: '',
-      sexOther: '',
-      guardianName: '',
-      guardianContact: '',
-      allergiesSelection: '',
-      allergiesOther: '',
-      allowPhotos: false,
-      notes: '',
-    });
+  setChildForms([emptyChildForm]);
+  setFocusedChildIndex(0);
     localStorage.removeItem(DRAFT_KEY);
     setView('checkin');
   };
@@ -551,10 +615,6 @@ function App() {
       setError('Guardian contact must be 11 digits, or use a + prefix for longer numbers.');
       return;
     }
-    if (updateForm.sex === 'Other' && !updateForm.sexOther.trim()) {
-      setError('Please specify the sex when selecting Other.');
-      return;
-    }
 
     const dateOfBirth = updateForm.dateOfBirth;
     const derivedAge = getAgeFromDob(dateOfBirth);
@@ -571,7 +631,7 @@ function App() {
       name: updateForm.name.trim(),
       age: derivedAge,
       dateOfBirth,
-      sex: updateForm.sex === 'Other' ? updateForm.sexOther.trim() : updateForm.sex,
+      sex: updateForm.sex,
       guardianName: updateForm.guardianName.trim(),
       guardianContact: updateForm.guardianContact.trim(),
       allergies:
@@ -801,10 +861,6 @@ function App() {
     setConfirmAction({ type: 'sign_in', child, timestamp: new Date().toISOString() });
   };
 
-  const requestSignOut = (child) => {
-    setConfirmAction({ type: 'sign_out', child, timestamp: new Date().toISOString() });
-  };
-
   const handleConfirmAction = async () => {
     if (!confirmAction) {
       return;
@@ -940,38 +996,17 @@ function App() {
               onSelectAnnouncement={setSelectedAnnouncement}
               truncateMessage={truncateMessage}
             />
-            {signedInChildId && (() => {
-              const child = children.find((c) => c.id === signedInChildId);
-              if (!child) return null;
-              return (
-                <section className="card" style={{ marginTop: 24 }}>
-                  <div className="card__header">
-                    <div>
-                      <h2>Signed-in child</h2>
-                      <p className="card__subtitle">You have signed in this child. Tap to view details.</p>
-                    </div>
-                  </div>
-                  <div
-                    className="list__item list__item--clickable"
-                    style={{ cursor: 'pointer', padding: 16, border: '1px solid #eee', borderRadius: 8 }}
-                    onClick={() => { setSelectedChild(child); setView('details'); }}
-                  >
-                    <h3>{child.name}</h3>
-                    {child.classCategory && <p className="list__notes">Class: {child.classCategory}</p>}
-                    {child.guardianContact && <p className="list__notes">Contact: {child.guardianContact}</p>}
-                    {child.lastStatus && <p className="list__notes">Status: {child.lastStatus === 'sign_in' ? 'Signed in' : 'Signed out'}</p>}
-                  </div>
-                </section>
-              );
-            })()}
           </>
         )}
 
         {view === 'register' && (
           <RegisterForm
-            childForm={childForm}
+            childForms={childForms}
             onChange={handleChildChange}
             onSubmit={handleAddChild}
+            onAddAnother={handleAddAnotherChild}
+            onRemoveChild={handleRemoveChild}
+            focusedChildIndex={focusedChildIndex}
             knownAllergies={KNOWN_ALLERGIES}
             getClassCategory={getClassCategory}
             getAgeFromDob={getAgeFromDob}
@@ -1037,7 +1072,6 @@ function App() {
             onGoHome={() => setView('home')}
             onStartUpdate={() => handleStartUpdate(selectedChild)}
             requestSignIn={requestSignIn}
-            requestSignOut={requestSignOut}
             isBirthdayToday={isBirthdayToday}
             messages={childMessages}
             messagesStatus={childMessagesStatus}

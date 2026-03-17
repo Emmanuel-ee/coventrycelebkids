@@ -7,14 +7,6 @@ describe('CheckinView', () => {
 
     render(
       <CheckinView
-        searchTerm=""
-        onSearchChange={jest.fn()}
-        filteredChildren={[]}
-        signedInChildren={[]}
-        requestSignIn={jest.fn()}
-        requestSignOut={jest.fn()}
-        onSelectChild={jest.fn()}
-        isBirthdayToday={jest.fn()}
         isScannerActive={false}
         onToggleScanner={handleToggle}
         scanNotice=""
@@ -26,7 +18,9 @@ describe('CheckinView', () => {
 
     const toggleButton = screen.getByRole('button', { name: /open camera/i });
     expect(toggleButton).toBeInTheDocument();
-    expect(screen.getByText(/camera stays off/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/use the camera to scan a child qr code to sign in or out/i)
+    ).toBeInTheDocument();
 
     fireEvent.click(toggleButton);
     expect(handleToggle).toHaveBeenCalledTimes(1);
