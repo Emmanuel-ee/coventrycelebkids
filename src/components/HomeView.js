@@ -1,22 +1,12 @@
 import React from 'react';
 
-
-
-// Example instructor data; in a real app, this would come from props or API
-const instructors = [
-  {
-    id: 1,
-    name: 'Lead Instructor',
-    email: 'instructor@celebkids.com',
-    avatar: '👩‍🏫',
-  },
-  // Add more instructors here in the future
-];
-
 const HomeView = ({
   isLoading,
   onRegister,
   onCheckin,
+  onViewInstructors,
+  onSelectInstructor = () => {},
+  instructors = [],
   announcements,
   announcementsStatus,
   birthdayChildren,
@@ -58,15 +48,19 @@ const HomeView = ({
           type="button"
           className="button--secondary"
           style={{fontSize: '0.95rem', padding: '0.5em 1.2em'}}
-          // onClick: could open a modal or page for full instructor list in the future
-          disabled
+          onClick={onViewInstructors}
         >
           View All Instructors
         </button>
       </div>
       <div style={{display: 'flex', gap: 16, flexWrap: 'wrap'}}>
         {instructors.map((inst) => (
-          <div key={inst.id} style={{
+          <button
+            key={inst.id}
+            type="button"
+            onClick={() => onSelectInstructor(inst)}
+            className="list__item list__item--clickable"
+            style={{
             flex: '1 1 180px',
             minWidth: 180,
             maxWidth: 220,
@@ -78,15 +72,25 @@ const HomeView = ({
             alignItems: 'center',
             gap: 16,
             marginBottom: 8,
-          }}>
-            <div style={{width: 48, height: 48, borderRadius: '50%', background: '#e0e7ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700, color: '#4859f0'}}>
-              <span role="img" aria-label="Instructor">{inst.avatar}</span>
+            textAlign: 'left',
+          }}
+          >
+            <div style={{width: 48, height: 48, borderRadius: '50%', background: '#e0e7ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700, color: '#4859f0', overflow: 'hidden'}}>
+              {inst.photoUrl ? (
+                <img
+                  src={inst.photoUrl}
+                  alt={inst.name}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                <span role="img" aria-label="Instructor">{inst.avatar}</span>
+              )}
             </div>
             <div>
               <div style={{fontWeight: 600, fontSize: 16}}>{inst.name}</div>
               <div style={{fontSize: 13, color: '#475467'}}>{inst.email}</div>
             </div>
-          </div>
+          </button>
         ))}
       </div>
     </section>

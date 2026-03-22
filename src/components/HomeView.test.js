@@ -8,12 +8,15 @@ describe('HomeView', () => {
     const onRegister = jest.fn();
     const onCheckin = jest.fn();
     const onSelectAnnouncement = jest.fn();
+  const onViewInstructors = jest.fn();
 
     render(
       <HomeView
         isLoading={false}
         onRegister={onRegister}
         onCheckin={onCheckin}
+        onViewInstructors={onViewInstructors}
+        instructors={[{ id: 'lead', name: 'Lead Instructor', email: 'lead@example.com' }]}
         announcements={[{ id: '1', title: 'Hello', message: 'Welcome parents!' }]}
         announcementsStatus=""
         birthdayChildren={[]}
@@ -24,9 +27,11 @@ describe('HomeView', () => {
 
   await userEvent.click(screen.getByRole('button', { name: /register your child/i }));
   await userEvent.click(screen.getByRole('button', { name: /drop off/i }));
+  await userEvent.click(screen.getByRole('button', { name: /view all instructors/i }));
 
     expect(onRegister).toHaveBeenCalledTimes(1);
     expect(onCheckin).toHaveBeenCalledTimes(1);
+  expect(onViewInstructors).toHaveBeenCalledTimes(1);
 
   await userEvent.click(screen.getByRole('button', { name: /hello/i }));
     expect(onSelectAnnouncement).toHaveBeenCalledWith({

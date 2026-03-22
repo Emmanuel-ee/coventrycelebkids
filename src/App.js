@@ -1,6 +1,10 @@
 import React from 'react';
 import './App.css';
-import { isSupabaseEnabled, supabase, supabaseConfigMessage } from './lib/supabaseClient';
+import {
+  isSupabaseEnabled,
+  supabase,
+  supabaseConfigMessage,
+} from './lib/supabaseClient';
 import {
   CHECKIN_KEY,
   DRAFT_KEY,
@@ -34,9 +38,22 @@ import CheckinView from './components/CheckinView';
 import DetailsView from './components/DetailsView';
 import ConfirmModal from './components/ConfirmModal';
 import AnnouncementModal from './components/AnnouncementModal';
+import InstructorModal from './components/InstructorModal';
+import InstructorProfileModal from './components/InstructorProfileModal';
 import useAnnouncements from './hooks/useAnnouncements';
 import useChildMessages from './hooks/useChildMessages';
 import useDraftStorage from './hooks/useDraftStorage';
+
+const mapInstructorFromDb = (teacher) => ({
+  id: teacher.id,
+  name: teacher.name || 'Instructor',
+  email: teacher.email || '',
+  phone: teacher.phone || '',
+  role: teacher.role || 'Instructor',
+  verified: teacher.verified === true || teacher.verified === 1 || teacher.verified === 'true',
+  photoUrl: teacher.photo_url || teacher.photoUrl || '',
+  avatar: '👩‍🏫',
+});
 
 
 function App() {
@@ -57,14 +74,37 @@ function App() {
   const [pendingScanId, setPendingScanId] = React.useState('');
   const [isScannerActive, setIsScannerActive] = React.useState(false);
   const [scanNotice, setScanNotice] = React.useState('');
-  const [signedInChildId, setSignedInChildId] = React.useState(
-    () => localStorage.getItem(SIGNED_IN_CHILD_KEY) || ''
-  );
+  const [signedInChildIds, setSignedInChildIds] = React.useState(() => {
+    const raw = localStorage.getItem(SIGNED_IN_CHILD_KEY);
+    if (!raw) {
+      return [];
+    }
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return parsed.filter(Boolean);
+      }
+      return raw ? [raw] : [];
+    } catch (error) {
+      return raw ? [raw] : [];
+    }
+  });
   const [authUserId, setAuthUserId] = React.useState('');
   const isStartingAuthRef = React.useRef(false);
   const birthdayAlertsRef = React.useRef(new Set());
   const lastScanRef = React.useRef({ value: '', timestamp: 0 });
   const [selectedAnnouncement, setSelectedAnnouncement] = React.useState(null);
+  const [isInstructorModalOpen, setIsInstructorModalOpen] = React.useState(false);
+  const [selectedInstructor, setSelectedInstructor] = React.useState(null);
+  const [instructors, setInstructors] = React.useState([
+    {
+      id: 'lead',
+      name: 'Lead Instructor',
+      email: 'instructor@celebkids.com',
+      role: 'Lead Instructor',
+      avatar: '👩‍🏫',
+    },
+  ]);
   const emptyChildForm = React.useMemo(
     () => ({
       name: '',
@@ -168,7 +208,7 @@ function App() {
       isActive = false;
       subscription?.subscription?.unsubscribe();
     };
-  }, []);
+  }, [authUserId]);
 
   const isValidGuardianContact = React.useCallback((value) => {
     if (!value) {
@@ -194,12 +234,12 @@ function App() {
   }, [children]);
 
   React.useEffect(() => {
-    if (signedInChildId) {
-      localStorage.setItem(SIGNED_IN_CHILD_KEY, signedInChildId);
+    if (signedInChildIds.length) {
+      localStorage.setItem(SIGNED_IN_CHILD_KEY, JSON.stringify(signedInChildIds));
     } else {
       localStorage.removeItem(SIGNED_IN_CHILD_KEY);
     }
-  }, [signedInChildId]);
+  }, [signedInChildIds]);
 
   React.useEffect(() => {
     if (!isSupabaseEnabled) {
@@ -298,14 +338,10 @@ function App() {
     );
 
     if (authUserId) {
-      const matchingChild = childrenWithQrCodes.find(
-        (child) => child.signedIn && child.signedInUserId === authUserId
-      );
-      if (matchingChild) {
-        setSignedInChildId(matchingChild.id);
-      } else {
-        setSignedInChildId('');
-      }
+      const signedInIds = childrenWithQrCodes
+        .filter((child) => child.signedIn && child.signedInUserId === authUserId)
+        .map((child) => child.id);
+      setSignedInChildIds(signedInIds);
     }
     setChildren(childrenWithQrCodes);
     setIsLoading(false);
@@ -336,7 +372,31 @@ function App() {
         )
       );
     }
-  }, [authUserId]);
+  }, []);
+
+  const fetchInstructors = React.useCallback(async () => {
+    if (!isSupabaseEnabled) {
+      return;
+    }
+
+    const response = await supabase
+      .from('teachers')
+      .select('*')
+      .order('created_at', { ascending: false });
+    const data = response.data;
+    const fetchError = response.error;
+
+    if (fetchError) {
+      setError(`Unable to load instructors from Supabase. ${fetchError.message}`);
+      return;
+    }
+
+    const mapped = (data || []).map(mapInstructorFromDb);
+    setInstructors(mapped);
+    if ((data || []).length === 0) {
+      setSupabaseStatus('No instructors found in Supabase.');
+    }
+  }, []);
 
   React.useEffect(() => {
     if (!isSupabaseEnabled) {
@@ -344,8 +404,16 @@ function App() {
     }
 
     fetchChildren();
+    fetchInstructors();
     return undefined;
-  }, [fetchChildren]);
+  }, [fetchChildren, fetchInstructors]);
+
+  React.useEffect(() => {
+    if (!isSupabaseEnabled || !authUserId) {
+      return;
+    }
+    fetchInstructors();
+  }, [authUserId, fetchInstructors]);
 
   React.useEffect(() => {
     if (isSupabaseEnabled || children.length === 0) {
@@ -380,11 +448,12 @@ function App() {
   }, [children]);
 
   React.useEffect(() => {
-    if (!signedInChildId) {
+    if (signedInChildIds.length === 0) {
       return;
     }
-    const stillSignedIn = children.some((child) => {
-      if (child.id !== signedInChildId || child.lastStatus !== 'sign_in') {
+    const validIds = signedInChildIds.filter((childId) => {
+      const child = children.find((item) => item.id === childId);
+      if (!child || child.lastStatus !== 'sign_in') {
         return false;
       }
       if (!isSupabaseEnabled) {
@@ -392,14 +461,14 @@ function App() {
       }
       return child.signedInUserId === authUserId;
     });
-    if (!stillSignedIn) {
-      setSignedInChildId('');
+    if (validIds.length !== signedInChildIds.length) {
+      setSignedInChildIds(validIds);
     }
-  }, [authUserId, children, signedInChildId]);
+  }, [authUserId, children, signedInChildIds]);
 
   React.useEffect(() => {
     if (isSupabaseEnabled && !authUserId) {
-      setSignedInChildId('');
+      setSignedInChildIds([]);
     }
   }, [authUserId]);
 
@@ -562,7 +631,7 @@ function App() {
       return;
     }
 
-    if (isSupabaseEnabled) {
+  if (isSupabaseEnabled) {
       setError('');
       setSupabaseStatus('');
       const { error: insertError } = await supabase
@@ -713,6 +782,18 @@ function App() {
     }
   };
 
+  const updateSignedInChildIds = React.useCallback((childId, action) => {
+    setSignedInChildIds((prev) => {
+      if (action === 'sign_in') {
+        if (prev.includes(childId)) {
+          return prev;
+        }
+        return [...prev, childId];
+      }
+      return prev.filter((id) => id !== childId);
+    });
+  }, []);
+
   const recordCheckin = React.useCallback(async (child, action, timestamp) => {
     const actionTimestamp = timestamp || new Date().toISOString();
 
@@ -774,6 +855,7 @@ function App() {
           }
           : prev
       );
+      updateSignedInChildIds(child.id, action);
     } else {
       setCheckins((prev) => [
         { id: createId(), childId: child.id, action, createdAt: actionTimestamp },
@@ -803,13 +885,14 @@ function App() {
           }
           : prev
       );
+      updateSignedInChildIds(child.id, action);
     }
 
     setSupabaseStatus(
       `${child.name} ${action === 'sign_in' ? 'signed in' : 'signed out'} successfully.`
     );
     return { success: true, timestamp: actionTimestamp };
-  }, [authUserId]);
+  }, [authUserId, updateSignedInChildIds]);
 
   React.useEffect(() => {
     if (!pendingScanId || children.length === 0) {
@@ -836,18 +919,11 @@ function App() {
         lastStatus: action,
         lastActionAt: result.timestamp || new Date().toISOString(),
       });
-      if (action === 'sign_in') {
-        setView('details');
-        setIsScannerActive(false); // Extra safeguard to turn off camera
-        if (result.success) {
-          setSignedInChildId(child.id);
-        }
-      } else if (action === 'sign_out') {
-        setView('checkin');
-        if (result.success && signedInChildId === child.id) {
-          setSignedInChildId('');
-        }
+      if (result.success) {
+        updateSignedInChildIds(child.id, action);
       }
+      setView('checkin');
+      setIsScannerActive(false); // Extra safeguard to turn off camera
       const url = new URL(window.location.href);
       url.searchParams.delete('scan');
       window.history.replaceState({}, '', url.toString());
@@ -855,7 +931,7 @@ function App() {
     };
 
     handleScan();
-  }, [pendingScanId, children, recordCheckin, signedInChildId]);
+  }, [pendingScanId, children, recordCheckin, updateSignedInChildIds]);
 
   const requestSignIn = (child) => {
     setConfirmAction({ type: 'sign_in', child, timestamp: new Date().toISOString() });
@@ -873,8 +949,8 @@ function App() {
         lastStatus: type,
         lastActionAt: result.timestamp,
       });
+      updateSignedInChildIds(child.id, type);
       setView('details');
-      setSignedInChildId(child.id);
     }
     if (result.success && type === 'sign_out') {
       setSelectedChild((prev) =>
@@ -882,10 +958,8 @@ function App() {
           ? { ...prev, lastStatus: type, lastActionAt: result.timestamp }
           : prev
       );
+      updateSignedInChildIds(child.id, type);
       setView('home');
-      if (signedInChildId === child.id) {
-        setSignedInChildId('');
-      }
     }
     setConfirmAction(null);
   };
@@ -990,6 +1064,9 @@ function App() {
               isLoading={isLoading}
               onRegister={() => setView('register')}
               onCheckin={() => setView('checkin')}
+              onViewInstructors={() => setIsInstructorModalOpen(true)}
+              onSelectInstructor={setSelectedInstructor}
+              instructors={instructors}
               announcements={announcements}
               announcementsStatus={announcementsStatus}
               birthdayChildren={birthdayChildren}
@@ -1038,34 +1115,47 @@ function App() {
               onScanError={handleScannerError}
               isCheckinAllowed={true}
             />
-            {signedInChildId && (() => {
-              const child = children.find((c) => c.id === signedInChildId);
-              if (!child) return null;
-              return (
-                <section className="card" style={{ marginTop: 24 }}>
-                  <div className="card__header">
-                    <div>
-                      <h2>Signed-in child</h2>
-                      <p className="card__subtitle">You have signed in this child. Tap to view details.</p>
-                    </div>
+            {signedInChildIds.length > 0 && (
+              <section className="card" style={{ marginTop: 24 }}>
+                <div className="card__header">
+                  <div>
+                    <h2>Signed-in children</h2>
+                    <p className="card__subtitle">
+                      You have signed in these children. Tap any child to view details.
+                    </p>
                   </div>
-                  <div
-                    className="list__item list__item--clickable"
-                    style={{ cursor: 'pointer', padding: 16, border: '1px solid #eee', borderRadius: 8 }}
-                    onClick={() => { setSelectedChild(child); setView('details'); }}
-                  >
-                    <h3>{child.name}</h3>
-                    {child.classCategory && <p className="list__notes">Class: {child.classCategory}</p>}
-                    {child.guardianContact && <p className="list__notes">Contact: {child.guardianContact}</p>}
-                    {child.lastStatus && <p className="list__notes">Status: {child.lastStatus === 'sign_in' ? 'Signed in' : 'Signed out'}</p>}
-                  </div>
-                </section>
-              );
-            })()}
+                </div>
+                <div className="list">
+                  {signedInChildIds.map((childId) => {
+                    const child = children.find((c) => c.id === childId);
+                    if (!child) {
+                      return null;
+                    }
+                    return (
+                      <div
+                        key={child.id}
+                        className="list__item list__item--clickable"
+                        style={{ cursor: 'pointer', padding: 16, border: '1px solid #eee', borderRadius: 8 }}
+                        onClick={() => { setSelectedChild(child); setView('details'); }}
+                      >
+                        <h3>{child.name}</h3>
+                        {child.classCategory && <p className="list__notes">Class: {child.classCategory}</p>}
+                        {child.guardianContact && <p className="list__notes">Contact: {child.guardianContact}</p>}
+                        {child.lastStatus && (
+                          <p className="list__notes">
+                            Status: {child.lastStatus === 'sign_in' ? 'Signed in' : 'Signed out'}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
           </>
         )}
 
-        {view === 'details' && selectedChild && selectedChild.id === signedInChildId && (
+        {view === 'details' && selectedChild && (
           <DetailsView
             selectedChild={selectedChild}
             onBack={() => setView('checkin')}
@@ -1104,6 +1194,16 @@ function App() {
       <AnnouncementModal
         selectedAnnouncement={selectedAnnouncement}
         onClose={() => setSelectedAnnouncement(null)}
+      />
+      {isInstructorModalOpen && (
+        <InstructorModal
+          instructors={instructors}
+          onClose={() => setIsInstructorModalOpen(false)}
+        />
+      )}
+      <InstructorProfileModal
+        instructor={selectedInstructor}
+        onClose={() => setSelectedInstructor(null)}
       />
     </div>
   );

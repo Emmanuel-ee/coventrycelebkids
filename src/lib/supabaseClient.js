@@ -26,6 +26,20 @@ const getConfigMessage = () => {
 
 export const supabaseConfigMessage = getConfigMessage();
 
+const getProjectRef = () => {
+  if (!supabaseUrl) {
+    return '';
+  }
+  try {
+    const hostname = new URL(supabaseUrl).hostname;
+    return hostname.split('.')[0] || '';
+  } catch (error) {
+    return '';
+  }
+};
+
+export const supabaseProjectRef = getProjectRef();
+
 export const supabase = isSupabaseEnabled
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null;
