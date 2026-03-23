@@ -1,5 +1,18 @@
 import React from 'react';
 
+const getInitials = (name) => {
+  if (!name) {
+    return 'IN';
+  }
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) {
+    return 'IN';
+  }
+  const first = parts[0][0] || '';
+  const last = parts.length > 1 ? parts[parts.length - 1][0] || '' : '';
+  return `${first}${last}`.toUpperCase();
+};
+
 const InstructorModal = ({ instructors, onClose, onSelectInstructor }) => {
   const [searchTerm, setSearchTerm] = React.useState('');
   const normalizedSearch = searchTerm.trim().toLowerCase();
@@ -67,7 +80,9 @@ const InstructorModal = ({ instructors, onClose, onSelectInstructor }) => {
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
                   ) : (
-                    <span>{inst.avatar}</span>
+                    <span aria-label="Instructor initials">
+                      {getInitials(inst.name)}
+                    </span>
                   )}
                 </div>
                 <div>

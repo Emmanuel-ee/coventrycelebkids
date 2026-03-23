@@ -1,5 +1,18 @@
 import React from 'react';
 
+const getInitials = (name) => {
+  if (!name) {
+    return 'IN';
+  }
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) {
+    return 'IN';
+  }
+  const first = parts[0][0] || '';
+  const last = parts.length > 1 ? parts[parts.length - 1][0] || '' : '';
+  return `${first}${last}`.toUpperCase();
+};
+
 const InstructorProfileModal = ({ instructor, onClose }) => {
   if (!instructor) {
     return null;
@@ -31,8 +44,8 @@ const InstructorProfileModal = ({ instructor, onClose }) => {
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               />
             ) : (
-              <span role="img" aria-label="Instructor">
-                {instructor.avatar}
+              <span aria-label="Instructor initials">
+                {getInitials(instructor.name)}
               </span>
             )}
           </div>

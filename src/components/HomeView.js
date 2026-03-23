@@ -1,5 +1,18 @@
 import React from 'react';
 
+const getInitials = (name) => {
+  if (!name) {
+    return 'IN';
+  }
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) {
+    return 'IN';
+  }
+  const first = parts[0][0] || '';
+  const last = parts.length > 1 ? parts[parts.length - 1][0] || '' : '';
+  return `${first}${last}`.toUpperCase();
+};
+
 const HomeView = ({
   isLoading,
   onRegister,
@@ -69,8 +82,8 @@ const HomeView = ({
                   className="instructors__photo"
                 />
               ) : (
-                <span role="img" aria-label="Instructor">
-                  {inst.avatar}
+                <span aria-label="Instructor initials">
+                  {getInitials(inst.name)}
                 </span>
               )}
             </div>
