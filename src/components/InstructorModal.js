@@ -1,6 +1,14 @@
 import React from 'react';
 
-const InstructorModal = ({ instructors, onClose }) => {
+const InstructorModal = ({ instructors, onClose, onSelectInstructor }) => {
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+  const filteredInstructors = normalizedSearch
+    ? instructors.filter((inst) =>
+        (inst.name || '').toLowerCase().includes(normalizedSearch)
+      )
+    : instructors;
+
   if (!instructors || instructors.length === 0) {
     return null;
   }
@@ -9,10 +17,34 @@ const InstructorModal = ({ instructors, onClose }) => {
     <div className="modal-overlay" role="dialog" aria-modal="true">
       <div className="modal">
         <h3>All instructors</h3>
-        <p className="modal__subtitle">Meet the team leading today&apos;s session.</p>
+        <div style={{ marginTop: 12 }}>
+          <label style={{ display: 'grid', gap: 6 }}>
+            Search by name
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Type a name"
+              style={{ width: '100%' }}
+            />
+          </label>
+        </div>
         <div className="list" style={{ marginTop: 12 }}>
-          {instructors.map((inst) => (
-            <div key={inst.id} className="list__item" style={{ border: '1px solid #e4e7ec' }}>
+          {filteredInstructors.length === 0 && (
+            <div className="empty">No instructors match that name.</div>
+          )}
+          {filteredInstructors.map((inst) => (
+            <button
+              key={inst.id}
+              type="button"
+              className="list__item list__item--clickable"
+              style={{ border: '1px solid #e4e7ec', width: '100%', textAlign: 'left' }}
+              onClick={() => {
+                if (onSelectInstructor) {
+                  onSelectInstructor(inst);
+                }
+              }}
+            >
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div
                   style={{
@@ -39,11 +71,11 @@ const InstructorModal = ({ instructors, onClose }) => {
                   )}
                 </div>
                 <div>
-                  <h4>{inst.name}</h4>
+                  <h4 className="instructors__modal-name">{inst.name}</h4>
                   <p className="list__notes">{inst.email}</p>
                 </div>
               </div>
-            </div>
+            </button>
           ))}
         </div>
         <div className="button-row" style={{ marginTop: 16 }}>

@@ -3,6 +3,7 @@ import './App.css';
 import {
   isSupabaseEnabled,
   supabase,
+  supabasePublic,
   supabaseConfigMessage,
 } from './lib/supabaseClient';
 import {
@@ -96,6 +97,7 @@ function App() {
   const [selectedAnnouncement, setSelectedAnnouncement] = React.useState(null);
   const [isInstructorModalOpen, setIsInstructorModalOpen] = React.useState(false);
   const [selectedInstructor, setSelectedInstructor] = React.useState(null);
+  const [returnToInstructorList, setReturnToInstructorList] = React.useState(false);
   const [instructors, setInstructors] = React.useState([
     {
       id: 'lead',
@@ -208,7 +210,7 @@ function App() {
       isActive = false;
       subscription?.subscription?.unsubscribe();
     };
-  }, [authUserId]);
+  }, []);
 
   const isValidGuardianContact = React.useCallback((value) => {
     if (!value) {
@@ -269,7 +271,7 @@ function App() {
     if (scanId) {
       setPendingScanId(scanId);
     }
-  }, []);
+  }, [authUserId]);
 
   const fetchChildren = React.useCallback(async () => {
     if (!isSupabaseEnabled) {
@@ -372,19 +374,19 @@ function App() {
         )
       );
     }
-  }, []);
+  }, [authUserId]);
 
   const fetchInstructors = React.useCallback(async () => {
     if (!isSupabaseEnabled) {
       return;
     }
 
-    const response = await supabase
+    setError('');
+    setSupabaseStatus('');
+    const { data, error: fetchError } = await supabasePublic
       .from('teachers')
       .select('*')
       .order('created_at', { ascending: false });
-    const data = response.data;
-    const fetchError = response.error;
 
     if (fetchError) {
       setError(`Unable to load instructors from Supabase. ${fetchError.message}`);
@@ -392,10 +394,15 @@ function App() {
     }
 
     const mapped = (data || []).map(mapInstructorFromDb);
-    setInstructors(mapped);
-    if ((data || []).length === 0) {
-      setSupabaseStatus('No instructors found in Supabase.');
-    }
+    const sorted = mapped.slice().sort((a, b) => {
+      const aLead = a.role?.toLowerCase().includes('lead') ? 1 : 0;
+      const bLead = b.role?.toLowerCase().includes('lead') ? 1 : 0;
+      if (aLead !== bLead) {
+        return bLead - aLead;
+      }
+      return (a.name || '').localeCompare(b.name || '');
+    });
+    setInstructors(sorted);
   }, []);
 
   React.useEffect(() => {
@@ -1029,6 +1036,15 @@ function App() {
   const birthdayChildren = children.filter(
     (child) => child.dateOfBirth && isBirthdayToday(child.dateOfBirth)
   );
+  const leadInstructors = React.useMemo(() => {
+    if (!instructors.length) {
+      return [];
+    }
+    const lead = instructors.find((inst) =>
+      inst.role?.toLowerCase().includes('lead')
+    );
+    return lead ? [lead] : instructors.slice(0, 1);
+  }, [instructors]);
   const qrCodeValue = selectedChild
     ? `${window.location.origin}${process.env.PUBLIC_URL || ''}/?scan=${selectedChild.qrCode || selectedChild.id}`
     : '';
@@ -1065,8 +1081,11 @@ function App() {
               onRegister={() => setView('register')}
               onCheckin={() => setView('checkin')}
               onViewInstructors={() => setIsInstructorModalOpen(true)}
-              onSelectInstructor={setSelectedInstructor}
-              instructors={instructors}
+              onSelectInstructor={(inst) => {
+                setReturnToInstructorList(false);
+                setSelectedInstructor(inst);
+              }}
+              instructors={leadInstructors}
               announcements={announcements}
               announcementsStatus={announcementsStatus}
               birthdayChildren={birthdayChildren}
@@ -1198,12 +1217,23 @@ function App() {
       {isInstructorModalOpen && (
         <InstructorModal
           instructors={instructors}
+          onSelectInstructor={(inst) => {
+            setSelectedInstructor(inst);
+            setReturnToInstructorList(true);
+            setIsInstructorModalOpen(false);
+          }}
           onClose={() => setIsInstructorModalOpen(false)}
         />
       )}
       <InstructorProfileModal
         instructor={selectedInstructor}
-        onClose={() => setSelectedInstructor(null)}
+        onClose={() => {
+          setSelectedInstructor(null);
+          if (returnToInstructorList) {
+            setReturnToInstructorList(false);
+            setIsInstructorModalOpen(true);
+          }
+        }}
       />
     </div>
   );

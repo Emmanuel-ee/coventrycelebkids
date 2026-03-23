@@ -42,8 +42,8 @@ const HomeView = ({
 
 
     <section className="card card--profile" style={{marginBottom: 24}}>
-      <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12}}>
-        <h3 style={{margin: 0, fontWeight: 600}}>Instructors</h3>
+      <div className="instructors__header">
+        <h3>Instructors</h3>
         <button
           type="button"
           className="button--secondary"
@@ -53,42 +53,31 @@ const HomeView = ({
           View All Instructors
         </button>
       </div>
-      <div style={{display: 'flex', gap: 16, flexWrap: 'wrap'}}>
+      <div className="instructors__grid">
         {instructors.map((inst) => (
           <button
             key={inst.id}
             type="button"
             onClick={() => onSelectInstructor(inst)}
-            className="list__item list__item--clickable"
-            style={{
-            flex: '1 1 180px',
-            minWidth: 180,
-            maxWidth: 220,
-            background: '#f8fafc',
-            border: '1px solid #e0e7ff',
-            borderRadius: 12,
-            padding: 16,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 16,
-            marginBottom: 8,
-            textAlign: 'left',
-          }}
+            className="list__item list__item--clickable instructors__card"
           >
-            <div style={{width: 48, height: 48, borderRadius: '50%', background: '#e0e7ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700, color: '#4859f0', overflow: 'hidden'}}>
+            <div className="instructors__avatar">
               {inst.photoUrl ? (
                 <img
                   src={inst.photoUrl}
                   alt={inst.name}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  className="instructors__photo"
                 />
               ) : (
-                <span role="img" aria-label="Instructor">{inst.avatar}</span>
+                <span role="img" aria-label="Instructor">
+                  {inst.avatar}
+                </span>
               )}
             </div>
-            <div>
-              <div style={{fontWeight: 600, fontSize: 16}}>{inst.name}</div>
-              <div style={{fontSize: 13, color: '#475467'}}>{inst.email}</div>
+            <div className="instructors__info">
+              <div className="instructors__name">{inst.name}</div>
+              <div className="instructors__role">{inst.role || 'Instructor'}</div>
+              <div className="instructors__meta">{inst.email}</div>
             </div>
           </button>
         ))}
